@@ -3,8 +3,10 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts } from '@ghs/ui';
 
-const icon = (name: keyof typeof Ionicons.glyphMap) => ({ color, size }: { color: ColorValue; size: number }) =>
-  <Ionicons name={name} size={size} color={color as string} />;
+const icon = (name: keyof typeof Ionicons.glyphMap) => {
+  const TabIcon = ({ color, size }: { color: ColorValue; size: number }) => <Ionicons name={name} size={size} color={color as string} />;
+  return TabIcon;
+};
 
 export default function TabsLayout() {
   return (

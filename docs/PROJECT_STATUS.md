@@ -1,12 +1,13 @@
 # Statut du projet — fin de Phase 2 + écrans de la Phase 3
 
-## Vérifié réellement
+## Vérifié réellement (16/10/2026)
+- `pnpm lint` (expo lint, ESLint 9) : OK ; `expo export --platform web` : OK.
 - `pnpm -r typecheck` : OK (5 workspaces, strict).
 - Tests Vitest `@ghs/validation` : 3/3 OK.
 - `expo export --platform android` : bundle Hermes généré sans erreur (5,3 Mo).
 ## Non vérifié
 - Rendu visuel sur appareil/simulateur iOS et Android (aucun émulateur ici) → **fidélité à la maquette non validée visuellement**.
-- Build iOS, EAS, tests E2E, lint.
+- Build iOS, EAS, tests E2E.
 ## Écrans livrés
 Onboarding, accueil, rituels (filtres), fiche rituel, réservation (choix du soin + redirection Planity), carte cadeau (formulaire validé), boutique (état vide), compte (formulaire validé), menu, entreprises & CE (formulaire validé), à propos, contact.
 ## Simulé / bloqué (honnêtement)
@@ -30,3 +31,8 @@ Onboarding, accueil, rituels (filtres), fiche rituel, réservation (choix du soi
 Catalogue passé à 8 rituels avec descriptions réelles, catégories Head Spa / Massage / Enfant, téléphone, note 5,0 (432 avis), règles de cartes cadeaux. Écarts à trancher : voir AUDIT.md §7 (horaires, durée Kids).
 ## Hypothèses à confirmer
 Samedi/dimanche : horaires non connus. `typescript` 5.9 installé (Expo recommande 6.0) — sans impact constaté.
+
+## Audit du 16/10/2026 — état V1
+- Le code source a été importé dans `main` (auparavant uniquement dans une archive `.tar.gz`, branche `develop`).
+- Lint ajouté (règle `react/no-unescaped-entities` désactivée : texte français) et branché dans la CI ; imports inutilisés supprimés.
+- **La V1 « vitrine + redirection Planity » est techniquement prête** (typecheck, tests, lint, export web OK). Les fonctions transactionnelles (compte, paiement, envoi des formulaires, boutique) restent bloquées par les accès listés ci-dessus et par les arbitrages métier de `AUDIT.md` §7.
