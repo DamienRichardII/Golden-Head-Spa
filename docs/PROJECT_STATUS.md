@@ -44,3 +44,8 @@ Samedi/dimanche : horaires non connus. `typescript` 5.9 installé (Expo recomman
 - **Activation** : projet Supabase `Golden Head Spa` (réf. `vkrpvnwaiybnvonnjzhw`, eu-west-3, 10 $/mois) créé le 16/10/2026 ; migrations + seed appliqués ; variables `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` définies sur Vercel (clé anon publique par conception). Sans ces variables, l'écran retombe sur le lien Planity.
 - **À trancher** : horaires réels (samedi/dimanche fermés par défaut, mardi–vendredi 10h30–17h30 d'après Planity), pauses/déjeuner, durée Kids, délai d'annulation, **synchronisation avec Planity** (deux agendas = risque de double réservation tant que Planity reste actif).
 - **Non fait** : emails de confirmation/rappel (Resend), vue administration des rendez-vous, comptes clients liés aux réservations, anti-spam avancé (captcha/rate-limit réseau).
+
+## Administration (16/10/2026)
+- Page `/admin` (web + app) : connexion Supabase Auth, accès limité au rôle `admin` (RLS côté base). Onglets : **Rendez-vous** (liste à venir, annulation avec confirmation, afficher les annulés), **Horaires** (ouvert/fermé + heures par jour), **Fermetures** (ajout/suppression de jours fermés).
+- Droits : créer le compte dans Supabase (Authentication > Users) puis exécuter `supabase/grant_admin.sql` avec l'email. Politiques RLS admin vérifiées par `pnpm test:sql` (28 contrôles).
+- Limites : pas d'email au client lors d'une annulation par la gérante ; session admin non persistée sur mobile natif (reconnexion à chaque lancement) ; dates des fermetures saisies au format AAAA-MM-JJ.

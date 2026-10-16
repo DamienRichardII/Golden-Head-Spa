@@ -7,8 +7,10 @@ const R = fileURLToPath(new URL('../', import.meta.url));
 const db = new PGlite({ extensions: { btree_gist, pgcrypto } });
 await db.exec(`create role anon; create role authenticated; create schema auth;
  create table auth.users (id uuid primary key default gen_random_uuid(), raw_user_meta_data jsonb);
- create function auth.uid() returns uuid language sql as $$ select null::uuid $$;`);
+ create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.sub', true), '')::uuid $$;`);
 for (const f of ['migrations/20261015000000_init_core.sql', 'seed.sql', 'migrations/20261016000000_booking.sql']) await db.exec(fs.readFileSync(R + f, 'utf8'));
+// Comme sur Supabase : les droits de table sont accordés, c'est la RLS qui fait le tri.
+await db.exec('grant usage on schema public, auth to anon, authenticated; grant all on all tables in schema public to anon, authenticated; grant select on auth.users to authenticated;');
 let fail = 0;
 const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) fail++; };
 const day = (dow, minAhead = 10) => { const d = new Date(); d.setUTCDate(d.getUTCDate() + minAhead); while (d.getUTCDay() !== dow) d.setUTCDate(d.getUTCDate() + 1); return d.toISOString().slice(0, 10); };
@@ -45,8 +47,29 @@ await db.exec(`insert into closures (starts_on, ends_on) values ('${day(4)}','${
 ok((await slots('decouverte', day(4))).length === 0, 'fermeture exceptionnelle respectée');
 err = undefined; try { await db.query("select * from create_booking('decouverte',$1::timestamptz,'L','bad','x',null)", [s[10]]); } catch (e) { err = e.message; }
 ok(!!err, `entrées invalides refusées (${err?.slice(0, 60)})`);
-await db.exec('set role anon');
-ok((await db.query('select * from get_available_slots($1,$2::date)', ['decouverte', tue])).rows.length > 0, 'anon peut lire les créneaux');
-let denied = false; try { await db.query('select * from bookings'); } catch { denied = true; }
-ok(denied, 'anon ne peut pas lire bookings directement');
+// --- RLS réelle : anon / client connecté / administratrice ---
+const admin = crypto.randomUUID(), client = crypto.randomUUID();
+await db.exec(`insert into auth.users (id) values ('${admin}'), ('${client}')`);
+await db.exec(`insert into user_roles (user_id, role) values ('${admin}', 'admin') on conflict do nothing`);
+const as = async (role, sub, sql) => {
+  await db.exec(`reset role; set role ${role}; select set_config('request.jwt.sub', '${sub ?? ''}', false)`);
+  const r = await db.query(sql).catch((e) => ({ error: e.message, rows: [] }));
+  await db.exec('reset role');
+  return r;
+};
+const total = (await db.query('select count(*)::int c from bookings')).rows[0].c;
+ok(total > 0, `${total} réservations en base pour le test RLS`);
+ok((await as('anon', null, 'select * from get_available_slots(\'decouverte\', \'' + tue + '\')')).rows.length > 0, 'anon peut lire les créneaux');
+ok((await as('anon', null, 'select * from bookings')).rows.length === 0, 'anon ne voit aucune réservation');
+ok((await as('authenticated', client, 'select * from bookings')).rows.length === 0, 'un client connecté ne voit pas les réservations des autres');
+ok((await as('authenticated', admin, 'select * from bookings')).rows.length === total, 'l’admin voit toutes les réservations');
+ok((await as('authenticated', admin, "select has_role('admin') as r")).rows[0]?.r === true, 'has_role(admin) vrai pour l’admin');
+ok((await as('authenticated', client, "select has_role('admin') as r")).rows[0]?.r === false, 'has_role(admin) faux pour un client');
+const cancelAll = (sub) => as('authenticated', sub, "update bookings set status = 'cancelled', cancelled_at = now() where status = 'confirmed' returning id");
+ok((await cancelAll(client)).rows.length === 0, 'un client ne peut pas annuler via la table');
+ok((await cancelAll(admin)).rows.length > 0, 'l’admin peut annuler via la table');
+ok((await as('anon', null, "update business_hours set open_time = '00:00', close_time = '23:00' where weekday = 1 returning 1")).rows.length === 0, 'anon ne peut pas modifier les horaires');
+ok((await as('authenticated', admin, "update business_hours set open_time = '10:00', close_time = '18:00' where weekday = 6 returning 1")).rows.length === 1, 'l’admin peut modifier les horaires');
+ok((await as('authenticated', admin, "insert into closures (starts_on, ends_on, reason) values (current_date + 30, current_date + 32, 'test') returning 1")).rows.length === 1, 'l’admin peut ajouter une fermeture');
+ok((await as('anon', null, "insert into closures (starts_on, ends_on) values (current_date, current_date) returning 1")).error !== undefined, 'anon ne peut pas ajouter de fermeture');
 console.log(fail ? `\n${fail} ECHEC(S)` : '\nTOUT OK'); process.exit(fail ? 1 : 0);
