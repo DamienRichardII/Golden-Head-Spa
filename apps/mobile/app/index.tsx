@@ -21,7 +21,7 @@ export default function Onboarding() {
   if (state === 'seen') return <Redirect href="/(tabs)" />;
 
   return (
-    <ImageBackground source={IMAGES.hero} resizeMode="cover" style={{ flex: 1, backgroundColor: colors.black }}>
+    <ImageBackground source={IMAGES.onboarding} resizeMode="cover" style={{ flex: 1, backgroundColor: colors.black }}>
       <LinearGradient colors={['rgba(23,20,17,0.55)', 'rgba(23,20,17,0.15)', 'rgba(23,20,17,0.9)']} style={StyleSheet.absoluteFill} />
       <View style={[s.wrap, { paddingTop: insets.top + space.xxl, paddingBottom: insets.bottom + space.lg }]}>
         <View>
