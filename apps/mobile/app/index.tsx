@@ -3,7 +3,6 @@ import { ImageBackground, Text, View, StyleSheet } from 'react-native';
 import { Redirect, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BUSINESS } from '@ghs/config';
 import { colors, fonts, space } from '@ghs/ui';
 import { Button } from '../src/components/ui';
 import { IMAGES } from '../src/data/images';
@@ -24,10 +23,9 @@ export default function Onboarding() {
     <ImageBackground source={IMAGES.onboarding} resizeMode="cover" style={{ flex: 1, backgroundColor: colors.black }}>
       <LinearGradient colors={['rgba(23,20,17,0.55)', 'rgba(23,20,17,0.15)', 'rgba(23,20,17,0.9)']} style={StyleSheet.absoluteFill} />
       <View style={[s.wrap, { paddingTop: insets.top + space.xxl, paddingBottom: insets.bottom + space.lg }]}>
-        <View>
+        <View style={s.center}>
           <Text style={s.logo}>GOLDEN</Text>
           <Text style={s.logoSub}>HEAD SPA</Text>
-          <Text style={s.tagline}>{BUSINESS.tagline}</Text>
         </View>
         <View>
           <Text style={s.values}>Détente  ·  Beauté  ·  Raffinement</Text>
@@ -39,9 +37,9 @@ export default function Onboarding() {
 }
 
 const s = StyleSheet.create({
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   wrap: { flex: 1, justifyContent: 'space-between', paddingHorizontal: space.lg },
   logo: { fontFamily: fonts.serif, fontSize: 44, color: colors.champagne, letterSpacing: 4 },
   logoSub: { fontFamily: fonts.serif, fontSize: 24, color: colors.champagne, letterSpacing: 3 },
-  tagline: { fontFamily: fonts.serif, fontSize: 26, color: '#F3E9D6', marginTop: space.lg, lineHeight: 32 },
   values: { fontFamily: fonts.sans, color: '#F3E9D6', textAlign: 'center', marginBottom: space.lg, fontSize: 13, letterSpacing: 1 },
 });
