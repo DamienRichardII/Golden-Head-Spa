@@ -1,6 +1,0 @@
-{
-  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
-  "buildCommand": "pnpm exec expo export --platform web --output-dir dist",
-  "outputDirectory": "dist",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
-}
