@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Golden Head Spa",
+    "slug": "golden-head-spa",
+    "scheme": "goldenheadspa",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.damcompany.goldenheadspa"
+    },
+    "android": {
+      "package": "com.damcompany.goldenheadspa"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    }
+  }
+}
