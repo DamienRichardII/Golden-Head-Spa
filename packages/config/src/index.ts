@@ -13,7 +13,7 @@ export const BUSINESS = {
     { days: 'Mardi – samedi', open: '10h30', close: '18h30' },
     { days: 'Dimanche', open: 'Fermé', close: '' },
   ],
-  giftCardRules: 'Valable 1 an, du lundi au samedi de 10h à 18h. Non valable sur les créneaux de dimanches, jours fériés et nocturnes, ni cumulable avec l\'option dernière minute.',
+  giftCardRules: 'Valable 1 an, du mardi au samedi aux horaires d\'ouverture (10h30–18h30). Non valable les jours fériés et sur les créneaux nocturnes, ni cumulable avec l\'option dernière minute.',
   giftCardValidityMonths: 12,
   rating: { score: 5.0, count: 432, source: 'Planity' }, // vu sur Planity le 15/10/2026
 } as const;
