@@ -10,7 +10,7 @@ import { z } from 'zod';
 import { Body, Button, Card, Field, Notice, Reveal, Screen, Title } from '../../src/components/ui';
 import { formatDuration, formatPrice, getRitual, RITUALS } from '../../src/data/rituals';
 import {
-  BookingError, cancelBooking, createBooking, fetchSlots, formatDayLabel, formatLongDate, formatTime, getLastBooking, nextDays,
+  BookingError, cancelBooking, createBooking, fetchClosedDays, fetchSlots, formatDayLabel, formatLongDate, formatTime, getLastBooking, nextDays,
   type BookingConfirmation,
 } from '../../src/lib/booking';
 import { isPlanityConfigured, openPlanity } from '../../src/lib/open';
@@ -33,6 +33,7 @@ export default function Booking() {
   const { ritual: preselected } = useLocalSearchParams<{ ritual?: string }>();
   const [serviceId, setServiceId] = useState<string | undefined>(preselected && getRitual(preselected) ? preselected : undefined);
   const [days] = useState(() => nextDays(DAYS_SHOWN));
+  const [closedDays, setClosedDays] = useState<Set<string>>(new Set());
   const [day, setDay] = useState<string | undefined>();
   const [slots, setSlots] = useState<string[] | undefined>();
   const [slotsLoading, setSlotsLoading] = useState(false);
@@ -47,6 +48,7 @@ export default function Booking() {
     resolver: zodResolver(detailsSchema), defaultValues: { name: '', email: '', phone: '', notes: '' },
   });
 
+  useEffect(() => { fetchClosedDays(days).then(setClosedDays).catch(() => {}); }, [days]);
   useEffect(() => { getLastBooking().then((b) => { if (b && new Date(b.endsAt) > new Date()) setDone(b); }); }, []);
 
   const loadSlots = useCallback(async (service: string, d: string) => {
@@ -141,10 +143,12 @@ export default function Booking() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.sm }}>
             {days.map((d) => {
               const active = d === day;
+              const closed = closedDays.has(d);
               return (
-                <Pressable key={d} accessibilityRole="button" accessibilityState={{ selected: active }} onPress={() => pickDay(d)}
-                  style={{ paddingHorizontal: 14, paddingVertical: 10, borderRadius: radii.md, backgroundColor: active ? colors.champagne : colors.white }}>
+                <Pressable key={d} accessibilityRole="button" accessibilityState={{ selected: active, disabled: closed }} disabled={closed} onPress={() => pickDay(d)}
+                  style={{ paddingHorizontal: 14, paddingVertical: 10, borderRadius: radii.md, backgroundColor: active ? colors.champagne : colors.white, opacity: closed ? 0.4 : 1 }}>
                   <Text style={{ fontFamily: fonts.sansMedium, fontSize: 13, color: active ? colors.white : colors.brown, textTransform: 'capitalize' }}>{formatDayLabel(d)}</Text>
+                  {closed && <Text style={{ fontFamily: fonts.sans, fontSize: 10, color: colors.muted, textAlign: 'center' }}>Fermé</Text>}
                 </Pressable>
               );
             })}

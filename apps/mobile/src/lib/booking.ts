@@ -76,3 +76,21 @@ export async function cancelBooking(c: Pick<BookingConfirmation, 'id' | 'cancelT
 }
 
 export const getLastBooking = () => getJson<BookingConfirmation>(CONFIRMATION_KEY);
+
+/** Jours (AAAA-MM-JJ) fermés : jour de fermeture hebdomadaire ou fermeture exceptionnelle. Lecture publique (RLS). */
+export async function fetchClosedDays(days: string[]): Promise<Set<string>> {
+  const closed = new Set<string>();
+  if (!supabase || days.length === 0) return closed;
+  const [hours, closures] = await Promise.all([
+    supabase.from('business_hours').select('weekday,open_time'),
+    supabase.from('closures').select('starts_on,ends_on').gte('ends_on', days[0] as string),
+  ]);
+  if (hours.error || closures.error) return closed;
+  const openWeekdays = new Set((hours.data ?? []).filter((h: { open_time: string | null }) => h.open_time).map((h: { weekday: number }) => h.weekday));
+  for (const d of days) {
+    const weekday = new Date(`${d}T12:00:00Z`).getUTCDay();
+    const exceptional = (closures.data ?? []).some((c: { starts_on: string; ends_on: string }) => d >= c.starts_on && d <= c.ends_on);
+    if (!openWeekdays.has(weekday) || exceptional) closed.add(d);
+  }
+  return closed;
+}
