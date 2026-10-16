@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ImageBackground, Text, View, StyleSheet } from 'react-native';
+import { ImageBackground, Text, View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Redirect, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +13,7 @@ const ONBOARDED = 'ghs_onboarded';
 export default function Onboarding() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
   const [state, setState] = useState<'loading' | 'seen' | 'new'>('loading');
   useEffect(() => { getFlag(ONBOARDED).then((v) => setState(v ? 'seen' : 'new')); }, []);
 
@@ -23,7 +24,7 @@ export default function Onboarding() {
     <ImageBackground source={IMAGES.onboarding} resizeMode="cover" style={{ flex: 1, backgroundColor: colors.black }}>
       <LinearGradient colors={['rgba(23,20,17,0.55)', 'rgba(23,20,17,0.15)', 'rgba(23,20,17,0.9)']} style={StyleSheet.absoluteFill} />
       <View style={[s.wrap, { paddingTop: insets.top + space.xxl, paddingBottom: insets.bottom + space.lg }]}>
-        <View style={s.center}>
+        <View style={[s.center, { paddingTop: height * 0.08 }]}>
           <Text style={s.logo}>GOLDEN</Text>
           <Text style={s.logoSub}>HEAD SPA</Text>
         </View>
@@ -37,7 +38,7 @@ export default function Onboarding() {
 }
 
 const s = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'flex-start' },
   wrap: { flex: 1, justifyContent: 'space-between', paddingHorizontal: space.lg },
   logo: { fontFamily: fonts.serif, fontSize: 44, color: colors.champagne, letterSpacing: 4 },
   logoSub: { fontFamily: fonts.serif, fontSize: 24, color: colors.champagne, letterSpacing: 3 },
