@@ -2,15 +2,19 @@
   "name": "golden-head-spa",
   "private": true,
   "packageManager": "pnpm@10.28.0",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev:mobile": "pnpm --filter @ghs/mobile start",
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "format": "prettier --write \"**/*.{ts,tsx,json,md,sql}\" --ignore-path .gitignore"
+    "format": "prettier --write \"**/*.{ts,tsx,json,md,sql}\" --ignore-path .gitignore",
+    "test:sql": "node supabase/tests/booking.test.mjs"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.10",
     "prettier": "^3.6.2",
     "turbo": "^2.11.8",
     "typescript": "~5.9.2"

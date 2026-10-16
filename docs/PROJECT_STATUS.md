@@ -36,3 +36,11 @@ Samedi/dimanche : horaires non connus. `typescript` 5.9 installé (Expo recomman
 - Le code source a été importé dans `main` (auparavant uniquement dans une archive `.tar.gz`, branche `develop`).
 - Lint ajouté (règle `react/no-unescaped-entities` désactivée : texte français) et branché dans la CI ; imports inutilisés supprimés.
 - **La V1 « vitrine + redirection Planity » est techniquement prête** (typecheck, tests, lint, export web OK). Les fonctions transactionnelles (compte, paiement, envoi des formulaires, boutique) restent bloquées par les accès listés ci-dessus et par les arbitrages métier de `AUDIT.md` §7.
+
+## Réservation intégrée (16/10/2026) — sans Planity
+- **Backend** : `supabase/migrations/20261016000000_booking.sql` — horaires (`business_hours`), fermetures (`closures`), réglages (`booking_settings`), `bookings` avec contrainte d'exclusion anti-double-réservation, fonctions `get_available_slots`, `create_booking`, `cancel_booking` (RLS : aucun accès direct public aux réservations).
+- **App** : écran `booking.tsx` en 4 étapes (soin → jour → heure → coordonnées), confirmation avec référence, annulation en ligne jusqu'à 24 h avant. Paiement sur place.
+- **Tests** : `pnpm test:sql` (Postgres embarqué PGlite : créneaux, chevauchement, concurrence, annulation, limites, RLS) + validation Zod. Vérifié OK.
+- **Activation** : définir `EXPO_PUBLIC_SUPABASE_URL` et `EXPO_PUBLIC_SUPABASE_ANON_KEY` (local + Vercel), appliquer les migrations puis `seed.sql` sur un projet Supabase dédié. Sans ces variables, l'écran retombe sur le lien Planity.
+- **À trancher** : horaires réels (samedi/dimanche fermés par défaut, mardi–vendredi 10h30–17h30 d'après Planity), pauses/déjeuner, durée Kids, délai d'annulation, **synchronisation avec Planity** (deux agendas = risque de double réservation tant que Planity reste actif).
+- **Non fait** : emails de confirmation/rappel (Resend), vue administration des rendez-vous, comptes clients liés aux réservations, anti-spam avancé (captcha/rate-limit réseau).

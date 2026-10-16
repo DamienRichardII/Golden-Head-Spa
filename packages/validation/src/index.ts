@@ -31,3 +31,13 @@ export const corporateLeadSchema = z.object({
 export type SignUpInput = z.infer<typeof signUpSchema>;
 export type GiftCardPurchaseInput = z.infer<typeof giftCardPurchaseSchema>;
 export type CorporateLeadInput = z.infer<typeof corporateLeadSchema>;
+
+export const bookingSchema = z.object({
+  serviceSlug: z.string().min(1),
+  startsAt: z.string().datetime({ offset: true }),
+  name: z.string().trim().min(2, 'Nom requis').max(80),
+  email: emailSchema,
+  phone: z.string().trim().regex(/^[0-9+()\s.-]{6,20}$/, 'Téléphone invalide'),
+  notes: z.string().trim().max(500).optional(),
+});
+export type BookingInput = z.infer<typeof bookingSchema>;
