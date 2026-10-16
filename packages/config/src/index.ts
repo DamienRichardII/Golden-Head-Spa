@@ -7,10 +7,11 @@ export const BUSINESS = {
   email: 'contact@goldenheadspa.com',
   website: 'https://goldenheadspa.com/',
   phone: '07 80 93 29 83',
-  // Horaires visibles sur Planity (captures) ; samedi/dimanche non visibles, et le brief indiquait d'autres horaires : à confirmer.
+  // Horaires confirmés par la gérante le 16/10/2026 (identiques en base : table business_hours).
   hours: [
     { days: 'Lundi', open: 'Fermé', close: '' },
-    { days: 'Mardi – vendredi', open: '10h30', close: '17h30' },
+    { days: 'Mardi – samedi', open: '10h30', close: '18h30' },
+    { days: 'Dimanche', open: 'Fermé', close: '' },
   ],
   giftCardRules: 'Valable 1 an, du lundi au samedi de 10h à 18h. Non valable sur les créneaux de dimanches, jours fériés et nocturnes, ni cumulable avec l\'option dernière minute.',
   giftCardValidityMonths: 12,

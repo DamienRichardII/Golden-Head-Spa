@@ -42,7 +42,7 @@ Samedi/dimanche : horaires non connus. `typescript` 5.9 installé (Expo recomman
 - **App** : écran `booking.tsx` en 4 étapes (soin → jour → heure → coordonnées), confirmation avec référence, annulation en ligne jusqu'à 24 h avant. Paiement sur place.
 - **Tests** : `pnpm test:sql` (Postgres embarqué PGlite : créneaux, chevauchement, concurrence, annulation, limites, RLS) + validation Zod. Vérifié OK.
 - **Activation** : projet Supabase `Golden Head Spa` (réf. `vkrpvnwaiybnvonnjzhw`, eu-west-3, 10 $/mois) créé le 16/10/2026 ; migrations + seed appliqués ; variables `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` définies sur Vercel (clé anon publique par conception). Sans ces variables, l'écran retombe sur le lien Planity.
-- **À trancher** : horaires réels (samedi/dimanche fermés par défaut, mardi–vendredi 10h30–17h30 d'après Planity), pauses/déjeuner, durée Kids, délai d'annulation, **synchronisation avec Planity** (deux agendas = risque de double réservation tant que Planity reste actif).
+- **À trancher** : horaires réels (mardi–samedi 10h30–18h30 confirmé le 16/10/2026), pauses/déjeuner, durée Kids, délai d'annulation, **synchronisation avec Planity** (deux agendas = risque de double réservation tant que Planity reste actif).
 - **Non fait** : emails de confirmation/rappel (Resend), vue administration des rendez-vous, comptes clients liés aux réservations, anti-spam avancé (captcha/rate-limit réseau).
 
 ## Administration (16/10/2026)

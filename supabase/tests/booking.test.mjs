@@ -8,7 +8,7 @@ const db = new PGlite({ extensions: { btree_gist, pgcrypto } });
 await db.exec(`create role anon; create role authenticated; create schema auth;
  create table auth.users (id uuid primary key default gen_random_uuid(), raw_user_meta_data jsonb);
  create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.sub', true), '')::uuid $$;`);
-for (const f of ['migrations/20261015000000_init_core.sql', 'seed.sql', 'migrations/20261016000000_booking.sql']) await db.exec(fs.readFileSync(R + f, 'utf8'));
+for (const f of ['migrations/20261015000000_init_core.sql', 'seed.sql', 'migrations/20261016000000_booking.sql', 'migrations/20261016000200_opening_hours.sql']) await db.exec(fs.readFileSync(R + f, 'utf8'));
 // Comme sur Supabase : les droits de table sont accordés, c'est la RLS qui fait le tri.
 await db.exec('grant usage on schema public, auth to anon, authenticated; grant all on all tables in schema public to anon, authenticated; grant select on auth.users to authenticated;');
 let fail = 0;
@@ -20,7 +20,8 @@ const tue = day(2), mon = day(1), sat = day(6);
 let s = await slots('decouverte', tue);
 ok(s.length === 13 && s[0].includes('T08:30') || s[0].includes('T09:30'), `mardi: ${s.length} créneaux, premier ${s[0]}, dernier ${s.at(-1)}`);
 ok((await slots('decouverte', mon)).length === 0, 'lundi fermé');
-ok((await slots('decouverte', sat)).length === 0, 'samedi fermé (en attente de confirmation)');
+ok((await slots('decouverte', sat)).length === 15, 'samedi ouvert 10h30–18h30 (15 créneaux de 50 min)');
+ok((await slots('decouverte', day(0))).length === 0, 'dimanche fermé');
 ok((await slots('decouverte', '2020-01-01')).length === 0, 'passé refusé');
 ok((await slots('inconnu', tue)).length === 0, 'service inconnu');
 const first = s[0];
