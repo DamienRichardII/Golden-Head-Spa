@@ -8,7 +8,7 @@ const db = new PGlite({ extensions: { btree_gist, pgcrypto } });
 await db.exec(`create role anon; create role authenticated; create schema auth;
  create table auth.users (id uuid primary key default gen_random_uuid(), raw_user_meta_data jsonb);
  create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.sub', true), '')::uuid $$;`);
-for (const f of ['migrations/20261015000000_init_core.sql', 'seed.sql', 'migrations/20261016000000_booking.sql', 'migrations/20261016000200_opening_hours.sql']) await db.exec(fs.readFileSync(R + f, 'utf8'));
+for (const f of ['migrations/20261015000000_init_core.sql', 'seed.sql', 'migrations/20261016000000_booking.sql', 'migrations/20261016000200_opening_hours.sql', 'migrations/20261105000000_flash_offers.sql']) await db.exec(fs.readFileSync(R + f, 'utf8'));
 // Comme sur Supabase : les droits de table sont accordés, c'est la RLS qui fait le tri.
 await db.exec('grant usage on schema public, auth to anon, authenticated; grant all on all tables in schema public to anon, authenticated; grant select on auth.users to authenticated;');
 let fail = 0;
@@ -73,4 +73,13 @@ ok((await as('anon', null, "update business_hours set open_time = '00:00', close
 ok((await as('authenticated', admin, "update business_hours set open_time = '10:00', close_time = '18:00' where weekday = 6 returning 1")).rows.length === 1, 'l’admin peut modifier les horaires');
 ok((await as('authenticated', admin, "insert into closures (starts_on, ends_on, reason) values (current_date + 30, current_date + 32, 'test') returning 1")).rows.length === 1, 'l’admin peut ajouter une fermeture');
 ok((await as('anon', null, "insert into closures (starts_on, ends_on) values (current_date, current_date) returning 1")).error !== undefined, 'anon ne peut pas ajouter de fermeture');
+// --- Offres flash : jamais visibles en anonyme, visibles des connectés tant qu'elles sont en cours ---
+await db.exec("insert into flash_offers (title, discount_percent, starts_at, ends_at) values ('En cours', 15, now() - interval '1 hour', now() + interval '5 hours'), ('Expirée', 10, now() - interval '3 hours', now() - interval '1 hour'), ('Arrêtée', 10, now() - interval '1 hour', now() + interval '5 hours')");
+await db.exec("update flash_offers set active = false where title = 'Arrêtée'");
+ok((await as('anon', null, 'select * from flash_offers')).rows.length === 0, 'anon ne voit aucune offre flash');
+const seen = (await as('authenticated', client, 'select title from flash_offers')).rows.map((r) => r.title);
+ok(seen.length === 1 && seen[0] === 'En cours', `un membre ne voit que l’offre en cours (${seen.join(',')})`);
+ok((await as('authenticated', client, "insert into flash_offers (title, discount_percent, starts_at, ends_at) values ('x', 5, now(), now() + interval '1 hour') returning 1")).error !== undefined, 'un membre ne peut pas créer d’offre');
+ok((await as('authenticated', admin, "insert into flash_offers (title, discount_percent, starts_at, ends_at) values ('Nouvelle', 20, now(), now() + interval '2 hours') returning 1")).rows.length === 1, 'l’admin peut créer une offre');
+ok((await as('authenticated', admin, "insert into flash_offers (title, discount_percent, starts_at, ends_at) values ('Mauvaise', 20, now(), now() - interval '1 hour') returning 1")).error !== undefined, 'une offre qui finit avant de commencer est refusée');
 console.log(fail ? `\n${fail} ECHEC(S)` : '\nTOUT OK'); process.exit(fail ? 1 : 0);

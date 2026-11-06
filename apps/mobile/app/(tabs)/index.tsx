@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { BUSINESS } from '@ghs/config';
 import { colors, fonts, radii, space } from '@ghs/ui';
 import { Body, Button, Card, Reveal, Screen, Title } from '../../src/components/ui';
+import { MusicToggle } from '../../src/components/MusicToggle';
+import { DEMO_MODE } from '../../src/store/session';
 import { RitualCard } from '../../src/components/RitualCard';
 import { IMAGES } from '../../src/data/images';
 import { RITUALS } from '../../src/data/rituals';
@@ -30,9 +32,13 @@ export default function Home() {
             <Text style={s.brand}>GOLDEN</Text>
             <Text style={s.brandSub}>HEAD SPA</Text>
           </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+          <MusicToggle />
+          <Pressable accessibilityLabel="Assistant" onPress={() => router.push('/assistant')} hitSlop={12}><Ionicons name="chatbubble-ellipses-outline" size={26} color={colors.brown} /></Pressable>
           <Pressable accessibilityLabel="Menu" onPress={() => router.push('/menu')} hitSlop={12}>
             <Ionicons name="menu-outline" size={28} color={colors.brown} />
           </Pressable>
+          </View>
         </View>
         <Title style={{ marginTop: space.lg }}>Bonjour,</Title>
         <Body muted>Prenez soin de vous</Body>
@@ -63,6 +69,13 @@ export default function Home() {
       </Reveal>
 
       <Reveal index={3}>
+        {DEMO_MODE && (
+          <Pressable accessibilityRole="button" onPress={() => router.push('/offers')} style={s.flash}>
+            <Ionicons name="flash-outline" size={22} color={colors.champagneDark} />
+            <View style={{ flex: 1 }}><Text style={s.flashTitle}>Offres flash</Text><Text style={s.flashSub}>Réservées aux membres de l'application</Text></View>
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </Pressable>
+        )}
         <View style={s.sectionHead}>
           <Text style={s.section}>Nos rituels phares</Text>
           <Link href="/rituals"><Text style={s.link}>Voir tout</Text></Link>
@@ -103,5 +116,8 @@ const s = StyleSheet.create({
   quickLabel: { fontFamily: fonts.sansMedium, fontSize: 11, color: colors.brown, marginTop: 6, textAlign: 'center' },
   sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: space.sm },
   section: { fontFamily: fonts.serifSemi, fontSize: 22, color: colors.brown },
+  flash: { flexDirection: 'row', alignItems: 'center', gap: space.md, backgroundColor: colors.beige, borderRadius: radii.lg, padding: space.md, marginBottom: space.lg },
+  flashTitle: { fontFamily: fonts.sansSemi, fontSize: 15, color: colors.brown },
+  flashSub: { fontFamily: fonts.sans, fontSize: 12, color: colors.muted },
   link: { fontFamily: fonts.sansMedium, fontSize: 13, color: colors.champagneDark },
 });

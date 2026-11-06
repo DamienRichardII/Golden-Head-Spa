@@ -20,6 +20,7 @@ async function write(key: string, value: string | null): Promise<void> {
 
 export async function getFlag(key: string): Promise<boolean> { return (await read(key)) === '1'; }
 export async function setFlag(key: string): Promise<void> { await write(key, '1'); }
+export async function clearFlag(key: string): Promise<void> { await write(key, null); }
 
 export async function getJson<T>(key: string): Promise<T | null> {
   const raw = await read(key);

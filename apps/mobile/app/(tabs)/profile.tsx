@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, space } from '@ghs/ui';
 import { signInSchema } from '@ghs/validation';
 import { z } from 'zod';
+import { DEMO_MODE, useSession } from '../../src/store/session';
 import { Body, Button, Field, Notice, Screen, Title } from '../../src/components/ui';
 
 type SignIn = z.infer<typeof signInSchema>;
@@ -15,6 +16,7 @@ const SECTIONS = ['Mes réservations', 'Mes commandes', 'Mes cartes cadeaux', 'M
 export default function Profile() {
   const { control, handleSubmit, formState: { errors } } = useForm<SignIn>({ resolver: zodResolver(signInSchema), defaultValues: { email: '', password: '' } });
   const [attempted, setAttempted] = useState(false);
+  const { isMember, setMember } = useSession();
   return (
     <Screen>
       <Title>Mon compte</Title>
@@ -26,6 +28,7 @@ export default function Profile() {
           <Field label="Mot de passe" secureTextEntry autoComplete="password" value={field.value} onChangeText={field.onChange} error={errors.password?.message} />)} />
         {attempted && <Notice>La connexion n'est pas encore disponible : le service d'authentification (Supabase) n'est pas configuré.</Notice>}
         <Button label="Se connecter" onPress={handleSubmit(() => setAttempted(true))} />
+        {DEMO_MODE && <Button variant="ghost" label={isMember ? 'Quitter le mode démo membre' : 'Mode démo : simuler un membre'} onPress={() => setMember(!isMember)} style={{ marginTop: space.sm }} />}
       </View>
       <View style={{ marginTop: space.xl }}>
         {SECTIONS.map((label) => (

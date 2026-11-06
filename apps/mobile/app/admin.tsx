@@ -4,10 +4,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { colors, fonts, radii, space } from '@ghs/ui';
 import { Body, Button, Card, Field, Notice, Screen, Title } from '../src/components/ui';
+import { flashOfferSchema } from '@ghs/validation';
+import { RITUALS } from '../src/data/rituals';
 import { formatLongDate, formatTime } from '../src/lib/booking';
 import { adminClient } from '../src/lib/adminClient';
 
-type Tab = 'bookings' | 'hours' | 'closures';
+type Tab = 'bookings' | 'hours' | 'closures' | 'offers';
 interface BookingRow {
   id: string; reference: string; starts_at: string; ends_at: string; customer_name: string; customer_email: string;
   customer_phone: string; notes: string | null; status: 'confirmed' | 'cancelled'; service: { name: string } | { name: string }[] | null;
@@ -86,7 +88,7 @@ export default function Admin() {
         <Pressable onPress={signOut} accessibilityRole="button"><Text style={{ fontFamily: fonts.sansMedium, color: colors.champagneDark }}>Déconnexion</Text></Pressable>
       </View>
       <View style={{ flexDirection: 'row', gap: space.sm, marginVertical: space.md }}>
-        {([['bookings', 'Rendez-vous'], ['hours', 'Horaires'], ['closures', 'Fermetures']] as const).map(([key, label]) => (
+        {([['bookings', 'Rendez-vous'], ['hours', 'Horaires'], ['closures', 'Fermetures'], ['offers', 'Offres flash']] as const).map(([key, label]) => (
           <Pressable key={key} accessibilityRole="tab" accessibilityState={{ selected: tab === key }} onPress={() => setTab(key)}
             style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: radii.pill, backgroundColor: tab === key ? colors.champagne : colors.beige }}>
             <Text style={{ fontFamily: fonts.sansMedium, fontSize: 13, color: tab === key ? colors.white : colors.brown }}>{label}</Text>
@@ -96,6 +98,7 @@ export default function Admin() {
       {tab === 'bookings' && <Bookings />}
       {tab === 'hours' && <Hours />}
       {tab === 'closures' && <Closures />}
+      {tab === 'offers' && <FlashOffers />}
     </Screen>
   );
 }
@@ -249,6 +252,85 @@ function Closures() {
             {c.reason ? <Body muted style={{ fontSize: 13 }}>{c.reason}</Body> : null}
           </View>
           <Pressable accessibilityRole="button" accessibilityLabel="Supprimer la fermeture" onPress={() => remove(c.id)}><Text style={{ color: colors.danger, fontFamily: fonts.sansMedium }}>Supprimer</Text></Pressable>
+        </Card>
+      ))}
+    </View>
+  );
+}
+
+interface OfferRow { id: string; title: string; discount_percent: number; ends_at: string; code: string | null; active: boolean }
+
+/** Offres flash : durée en heures à partir de maintenant ; visibles uniquement des utilisateurs authentifiés (RLS). */
+function FlashOffers() {
+  const [rows, setRows] = useState<OfferRow[] | undefined>();
+  const [title, setTitle] = useState('');
+  const [discount, setDiscount] = useState('');
+  const [hours, setHours] = useState('24');
+  const [description, setDescription] = useState('');
+  const [code, setCode] = useState('');
+  const [ritualId, setRitualId] = useState<string | undefined>();
+  const [msg, setMsg] = useState<string | undefined>();
+
+  const load = useCallback(async () => {
+    if (!adminClient) return;
+    const { data } = await adminClient.from('flash_offers').select('id,title,discount_percent,ends_at,code,active')
+      .eq('active', true).gte('ends_at', new Date().toISOString()).order('ends_at');
+    setRows((data ?? []) as OfferRow[]);
+  }, []);
+  useEffect(() => { void load(); }, [load]);
+
+  const add = async () => {
+    if (!adminClient) return;
+    const h = Number(hours);
+    const now = new Date();
+    const parsed = flashOfferSchema.safeParse({
+      title, description: description || undefined, ritualId, code: code || undefined,
+      discountPercent: Number(discount), startsAt: now.toISOString(), endsAt: new Date(now.getTime() + (Number.isFinite(h) ? h : 0) * 3_600_000).toISOString(),
+    });
+    if (!parsed.success || !(h > 0 && h <= 720)) { setMsg('Champs invalides : titre, réduction (1–90 %) et durée (1–720 h) requis.'); return; }
+    let serviceId: string | null = null;
+    if (ritualId) {
+      const { data } = await adminClient.from('services').select('id').eq('slug', ritualId).maybeSingle();
+      serviceId = (data as { id: string } | null)?.id ?? null;
+    }
+    const o = parsed.data;
+    const { error: e } = await adminClient.from('flash_offers').insert({
+      title: o.title, description: o.description ?? null, service_id: serviceId, discount_percent: o.discountPercent,
+      starts_at: o.startsAt, ends_at: o.endsAt, code: o.code ?? null,
+    });
+    if (e) { setMsg('Création impossible (la table flash_offers est-elle créée ?).'); return; }
+    setMsg(undefined); setTitle(''); setDiscount(''); setDescription(''); setCode(''); setRitualId(undefined); await load();
+  };
+  const stop = async (id: string) => { await adminClient?.from('flash_offers').update({ active: false }).eq('id', id); await load(); };
+
+  return (
+    <View>
+      <Body muted style={{ marginBottom: space.md }}>Offres éphémères réservées aux membres connectés de l'application. La durée court à partir de la création.</Body>
+      <Card style={{ marginBottom: space.md }}>
+        <Field label="Titre" value={title} onChangeText={setTitle} />
+        <Field label="Réduction (%)" value={discount} onChangeText={setDiscount} keyboardType="number-pad" />
+        <Field label="Durée (heures)" value={hours} onChangeText={setHours} keyboardType="number-pad" />
+        <Field label="Description (optionnel)" value={description} onChangeText={setDescription} />
+        <Field label="Code (optionnel)" value={code} onChangeText={setCode} autoCapitalize="characters" />
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginBottom: space.md }}>
+          {RITUALS.map((r) => (
+            <Pressable key={r.id} accessibilityRole="button" accessibilityState={{ selected: ritualId === r.id }} onPress={() => setRitualId(ritualId === r.id ? undefined : r.id)}
+              style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: radii.pill, backgroundColor: ritualId === r.id ? colors.champagne : colors.beige }}>
+              <Text style={{ fontFamily: fonts.sansMedium, fontSize: 12, color: ritualId === r.id ? colors.white : colors.brown }}>{r.name}</Text>
+            </Pressable>
+          ))}
+        </View>
+        {msg && <Notice>{msg}</Notice>}
+        <Button label="Créer l'offre" onPress={add} disabled={!title || !discount} />
+      </Card>
+      {rows && rows.length === 0 && <Body muted>Aucune offre en cours.</Body>}
+      {rows?.map((o) => (
+        <Card key={o.id} style={{ marginBottom: space.sm, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: fonts.sansSemi, color: colors.brown }}>-{o.discount_percent} % · {o.title}</Text>
+            <Body muted style={{ fontSize: 13 }}>Jusqu'au {formatLongDate(o.ends_at)} {formatTime(o.ends_at)}{o.code ? ` · code ${o.code}` : ''}</Body>
+          </View>
+          <Pressable accessibilityRole="button" accessibilityLabel="Arrêter l'offre" onPress={() => stop(o.id)}><Text style={{ color: colors.danger, fontFamily: fonts.sansMedium }}>Arrêter</Text></Pressable>
         </Card>
       ))}
     </View>

@@ -3,10 +3,12 @@ import { Link, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, space } from '@ghs/ui';
 import { Button, Screen } from '../src/components/ui';
+import { DEMO_MODE } from '../src/store/session';
 
 const ITEMS = [
   { label: 'Accueil', href: '/(tabs)' },
   { label: 'Nos rituels', href: '/rituals' },
+  { label: 'Assistant', href: '/assistant' },
   { label: 'Carte cadeau', href: '/gift-card' },
   { label: 'Boutique', href: '/(tabs)/shop' },
   { label: 'Entreprises & CE', href: '/corporate' },
@@ -24,7 +26,7 @@ export default function Menu() {
       </Pressable>
       <Text style={{ fontFamily: fonts.serif, fontSize: 36, color: colors.champagne, letterSpacing: 3 }}>GOLDEN</Text>
       <Text style={{ fontFamily: fonts.serif, fontSize: 18, color: colors.champagne, letterSpacing: 3, marginBottom: space.xl }}>HEAD SPA</Text>
-      {ITEMS.map((i) => (
+      {[...(DEMO_MODE ? [{ label: 'Offres flash', href: '/offers' } as const] : []), ...ITEMS].map((i) => (
         <Link key={i.label} href={i.href} replace asChild>
           <Pressable accessibilityRole="link" style={{ paddingVertical: 12 }}>
             <Text style={{ fontFamily: fonts.sans, fontSize: 18, color: '#F3E9D6' }}>{i.label}</Text>

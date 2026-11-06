@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bookingSchema, giftCardPurchaseSchema, signUpSchema } from './index';
+import { bookingSchema, chatRequestSchema, flashOfferSchema, giftCardPurchaseSchema, signUpSchema } from './index';
 
 describe('validation', () => {
   it('rejette un mot de passe court', () => {
@@ -22,5 +22,13 @@ describe('validation', () => {
   it('rejette un téléphone ou une date invalide', () => {
     expect(bookingSchema.safeParse({ ...booking, phone: 'abc' }).success).toBe(false);
     expect(bookingSchema.safeParse({ ...booking, startsAt: 'demain' }).success).toBe(false);
+  });
+  it('refuse une offre flash qui finit avant de commencer', () => {
+    const r = flashOfferSchema.safeParse({ title: 'Flash', discountPercent: 20, startsAt: '2026-11-10T10:00:00Z', endsAt: '2026-11-09T10:00:00Z' });
+    expect(r.success).toBe(false);
+  });
+  it('refuse un chat dont le dernier message est de l\'assistant', () => {
+    expect(chatRequestSchema.safeParse({ messages: [{ role: 'assistant', content: 'Bonjour' }] }).success).toBe(false);
+    expect(chatRequestSchema.safeParse({ messages: [{ role: 'user', content: 'Bonjour' }] }).success).toBe(true);
   });
 });

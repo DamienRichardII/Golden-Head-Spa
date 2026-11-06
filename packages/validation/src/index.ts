@@ -41,3 +41,24 @@ export const bookingSchema = z.object({
   notes: z.string().trim().max(500).optional(),
 });
 export type BookingInput = z.infer<typeof bookingSchema>;
+
+export const flashOfferSchema = z.object({
+  title: z.string().trim().min(2).max(80),
+  description: z.string().trim().max(300).optional(),
+  ritualId: z.string().min(1).optional(),
+  discountPercent: z.number().int().min(1).max(90),
+  startsAt: z.string().datetime(),
+  endsAt: z.string().datetime(),
+  code: z.string().trim().max(24).optional(),
+}).refine((v) => new Date(v.endsAt) > new Date(v.startsAt), { message: 'La fin doit suivre le début', path: ['endsAt'] });
+export type FlashOfferInput = z.infer<typeof flashOfferSchema>;
+
+export const CHAT_MAX_MESSAGES = 12;
+export const CHAT_MAX_CHARS = 500;
+export const chatRequestSchema = z.object({
+  messages: z.array(z.object({
+    role: z.enum(['user', 'assistant']),
+    content: z.string().trim().min(1).max(CHAT_MAX_CHARS),
+  })).min(1).max(CHAT_MAX_MESSAGES),
+}).refine((v) => v.messages[v.messages.length - 1]?.role === 'user', { message: 'Le dernier message doit venir du client' });
+export type ChatRequest = z.infer<typeof chatRequestSchema>;
