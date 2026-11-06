@@ -37,7 +37,7 @@ export default function GiftCard() {
             <Pressable key={r.id} accessibilityRole="button" accessibilityState={{ selected: active }}
               onPress={() => { setRitualId(r.id); setValue('ritualId', r.id); setValue('amountEur', r.priceEur); }}
               style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: radii.pill, backgroundColor: active ? colors.champagne : colors.beige }}>
-              <Text style={{ fontFamily: fonts.sansMedium, fontSize: 13, color: active ? colors.white : colors.brown }}>{r.name} · {formatPrice(r.priceEur)}</Text>
+              <Text style={{ fontFamily: fonts.sansMedium, fontSize: 13, color: active ? colors.onGold : colors.brown }}>{r.name} · {formatPrice(r.priceEur)}</Text>
             </Pressable>
           );
         })}

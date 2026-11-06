@@ -20,7 +20,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <StatusBar style="auto" />
+          <StatusBar style="light" />
           <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.ivory }, animation: 'fade_from_bottom' }}>
             <Stack.Screen name="index" options={{ animation: 'none' }} />
             <Stack.Screen name="menu" options={{ presentation: 'modal' }} />

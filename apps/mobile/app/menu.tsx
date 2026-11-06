@@ -28,8 +28,8 @@ export default function Menu() {
       <Text style={{ fontFamily: fonts.serif, fontSize: 18, color: colors.champagne, letterSpacing: 3, marginBottom: space.xl }}>HEAD SPA</Text>
       {[...(DEMO_MODE ? [{ label: 'Offres flash', href: '/offers' } as const] : []), ...ITEMS].map((i) => (
         <Link key={i.label} href={i.href} replace asChild>
-          <Pressable accessibilityRole="link" style={{ paddingVertical: 12 }}>
-            <Text style={{ fontFamily: fonts.sans, fontSize: 18, color: '#F3E9D6' }}>{i.label}</Text>
+          <Pressable accessibilityRole="link" style={{ paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.line }}>
+            <Text style={{ fontFamily: fonts.sans, fontSize: 18, color: colors.brown }}>{i.label}</Text>
           </Pressable>
         </Link>
       ))}

@@ -1,20 +1,27 @@
 import { ReactNode } from 'react';
 import { Pressable, Text, View, ViewStyle, StyleSheet, ScrollView, TextInput, TextInputProps } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, ReduceMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts, radii, shadow, space } from '@ghs/ui';
 
-export function Screen({ children, dark }: { children: ReactNode; dark?: boolean }) {
+/** Fond commun : noir chaud avec halo doré discret en haut (ambiance des maquettes). */
+export function Screen({ children, bottomInset = 0 }: { children: ReactNode; dark?: boolean; bottomInset?: number }) {
   const insets = useSafeAreaInsets();
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: dark ? colors.black : colors.ivory }}
-      contentContainerStyle={{ paddingTop: insets.top + space.md, paddingHorizontal: space.md, paddingBottom: space.xxl }}
-      showsVerticalScrollIndicator={false}
-    >
-      {children}
-    </ScrollView>
+    <View style={{ flex: 1, backgroundColor: colors.ivory }}>
+      <LinearGradient pointerEvents="none" colors={['rgba(212,175,106,0.14)', 'rgba(212,175,106,0)']} style={s.glowTop} />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingTop: insets.top + space.md, paddingHorizontal: space.md, paddingBottom: space.xxl + bottomInset }}
+        showsVerticalScrollIndicator={false}
+      >
+        {children}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -23,6 +30,51 @@ export function Title({ children, style }: { children: ReactNode; style?: object
 }
 export function Body({ children, muted, style }: { children: ReactNode; muted?: boolean; style?: object }) {
   return <Text style={[s.body, muted && { color: colors.muted }, style]}>{children}</Text>;
+}
+
+/** En-tête d'écran : retour (optionnel) + titre serif + sous-titre. */
+export function ScreenHeader({ title, subtitle, back = true, right }: { title: string; subtitle?: string; back?: boolean; right?: ReactNode }) {
+  const router = useRouter();
+  return (
+    <View style={{ marginBottom: space.md }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+        {back && (
+          <Pressable accessibilityRole="button" accessibilityLabel="Retour" onPress={() => router.back()} hitSlop={12} style={s.iconBtn}>
+            <Ionicons name="chevron-back" size={22} color={colors.brown} />
+          </Pressable>
+        )}
+        {title ? <Title style={{ flex: 1 }}>{title}</Title> : <View style={{ flex: 1 }} />}
+        {right}
+      </View>
+      {subtitle ? <Body muted style={{ marginTop: 4 }}>{subtitle}</Body> : null}
+    </View>
+  );
+}
+
+export function IconButton({ name, label, onPress, color = colors.brown }: { name: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void; color?: string }) {
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={8} style={s.iconBtn}>
+      <Ionicons name={name} size={20} color={color} />
+    </Pressable>
+  );
+}
+
+export function Chip({ label, active, onPress, small }: { label: string; active?: boolean; onPress?: () => void; small?: boolean }) {
+  return (
+    <Pressable accessibilityRole="button" accessibilityState={{ selected: !!active }} onPress={onPress}
+      style={[s.chip, small && { paddingVertical: 6 }, active ? { backgroundColor: colors.champagne, borderColor: colors.champagne } : null]}>
+      <Text style={{ fontFamily: fonts.sansMedium, fontSize: small ? 12 : 13, color: active ? colors.onGold : colors.brown }}>{label}</Text>
+    </Pressable>
+  );
+}
+
+export function SectionTitle({ children, action, onAction }: { children: ReactNode; action?: string; onAction?: () => void }) {
+  return (
+    <View style={s.sectionHead}>
+      <Text accessibilityRole="header" style={s.section}>{children}</Text>
+      {action ? <Pressable accessibilityRole="link" onPress={onAction} hitSlop={8}><Text style={s.sectionLink}>{action}  ›</Text></Pressable> : null}
+    </View>
+  );
 }
 
 export function Button({ label, onPress, variant = 'gold', disabled, style }: {
@@ -36,7 +88,7 @@ export function Button({ label, onPress, variant = 'gold', disabled, style }: {
       onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); onPress?.(); }}
       style={({ pressed }) => [
         s.btn,
-        variant === 'gold' ? { backgroundColor: colors.champagne } : { borderWidth: 1, borderColor: colors.champagne },
+        variant === 'gold' ? [{ backgroundColor: colors.champagne }, shadow.glow] : { borderWidth: 1, borderColor: colors.champagne },
         disabled && { opacity: 0.45 },
         pressed && { transform: [{ scale: 0.98 }] },
         style,
@@ -47,8 +99,9 @@ export function Button({ label, onPress, variant = 'gold', disabled, style }: {
   );
 }
 
-export function Card({ children, style }: { children: ReactNode; style?: ViewStyle }) {
-  return <View style={[s.card, shadow.card, style]}>{children}</View>;
+/** Carte « verre » : surface sombre translucide, filet doré. */
+export function Card({ children, style, glow }: { children: ReactNode; style?: ViewStyle; glow?: boolean }) {
+  return <View style={[s.card, glow && shadow.glow, glow && { borderColor: colors.champagne }, style]}>{children}</View>;
 }
 
 export function Reveal({ children, index = 0 }: { children: ReactNode; index?: number }) {
@@ -88,13 +141,19 @@ export function EmptyState({ title, text }: { title: string; text: string }) {
 }
 
 const s = StyleSheet.create({
-  title: { fontFamily: fonts.serifSemi, fontSize: 30, color: colors.brown, letterSpacing: 0.5 },
+  glowTop: { position: 'absolute', top: 0, left: 0, right: 0, height: 280 },
+  title: { fontFamily: fonts.serifSemi, fontSize: 32, color: colors.brown, letterSpacing: 0.5 },
   body: { fontFamily: fonts.sans, fontSize: 15, lineHeight: 22, color: colors.brown },
   btn: { minHeight: 52, borderRadius: radii.pill, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.lg },
-  btnText: { fontFamily: fonts.sansSemi, color: colors.white, fontSize: 16 },
-  card: { backgroundColor: colors.white, borderRadius: radii.lg, padding: space.md },
-  notice: { backgroundColor: colors.beige, borderRadius: radii.md, padding: space.md, marginVertical: space.md },
+  btnText: { fontFamily: fonts.sansSemi, color: colors.onGold, fontSize: 16 },
+  card: { backgroundColor: colors.surface, borderRadius: radii.lg, padding: space.md, borderWidth: 1, borderColor: colors.line },
+  notice: { backgroundColor: colors.beige, borderRadius: radii.md, padding: space.md, marginVertical: space.md, borderWidth: 1, borderColor: colors.line },
   noticeText: { fontFamily: fonts.sans, fontSize: 13, lineHeight: 19, color: colors.brown },
   label: { fontFamily: fonts.sansMedium, fontSize: 13, color: colors.brown, marginBottom: 6 },
-  input: { minHeight: 48, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.white, paddingHorizontal: space.md, fontFamily: fonts.sans, fontSize: 15, color: colors.black },
+  input: { minHeight: 48, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, paddingHorizontal: space.md, fontFamily: fonts.sans, fontSize: 15, color: colors.brown },
+  iconBtn: { width: 40, height: 40, borderRadius: 14, borderWidth: 1, borderColor: colors.line, backgroundColor: 'rgba(34,25,17,0.6)', alignItems: 'center', justifyContent: 'center' },
+  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.line, backgroundColor: 'rgba(34,25,17,0.6)' },
+  sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: space.sm, marginTop: space.md },
+  section: { fontFamily: fonts.serifSemi, fontSize: 24, color: colors.brown },
+  sectionLink: { fontFamily: fonts.sansMedium, fontSize: 13, color: colors.champagneDark },
 });

@@ -91,7 +91,7 @@ export default function Admin() {
         {([['bookings', 'Rendez-vous'], ['hours', 'Horaires'], ['closures', 'Fermetures'], ['offers', 'Offres flash']] as const).map(([key, label]) => (
           <Pressable key={key} accessibilityRole="tab" accessibilityState={{ selected: tab === key }} onPress={() => setTab(key)}
             style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: radii.pill, backgroundColor: tab === key ? colors.champagne : colors.beige }}>
-            <Text style={{ fontFamily: fonts.sansMedium, fontSize: 13, color: tab === key ? colors.white : colors.brown }}>{label}</Text>
+            <Text style={{ fontFamily: fonts.sansMedium, fontSize: 13, color: tab === key ? colors.onGold : colors.brown }}>{label}</Text>
           </Pressable>
         ))}
       </View>
@@ -316,7 +316,7 @@ function FlashOffers() {
           {RITUALS.map((r) => (
             <Pressable key={r.id} accessibilityRole="button" accessibilityState={{ selected: ritualId === r.id }} onPress={() => setRitualId(ritualId === r.id ? undefined : r.id)}
               style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: radii.pill, backgroundColor: ritualId === r.id ? colors.champagne : colors.beige }}>
-              <Text style={{ fontFamily: fonts.sansMedium, fontSize: 12, color: ritualId === r.id ? colors.white : colors.brown }}>{r.name}</Text>
+              <Text style={{ fontFamily: fonts.sansMedium, fontSize: 12, color: ritualId === r.id ? colors.onGold : colors.brown }}>{r.name}</Text>
             </Pressable>
           ))}
         </View>

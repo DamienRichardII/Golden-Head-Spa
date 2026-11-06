@@ -12,15 +12,17 @@ export default function TabsLayout() {
   return (
     <Tabs screenOptions={{
       headerShown: false,
-      tabBarActiveTintColor: colors.champagneDark,
+      sceneStyle: { backgroundColor: colors.ivory },
+      tabBarActiveTintColor: colors.champagne,
       tabBarInactiveTintColor: colors.muted,
       tabBarLabelStyle: { fontFamily: fonts.sansMedium, fontSize: 11 },
-      tabBarStyle: { backgroundColor: colors.ivory, borderTopColor: colors.line },
+      tabBarStyle: { backgroundColor: colors.black, borderTopColor: colors.line },
     }}>
       <Tabs.Screen name="index" options={{ title: 'Accueil', tabBarIcon: icon('home-outline') }} />
+      <Tabs.Screen name="rituals" options={{ title: 'Rituels', tabBarIcon: icon('flower-outline') }} />
       <Tabs.Screen name="booking" options={{ title: 'Réservation', tabBarIcon: icon('calendar-outline') }} />
-      <Tabs.Screen name="shop" options={{ title: 'Boutique', tabBarIcon: icon('bag-outline') }} />
       <Tabs.Screen name="profile" options={{ title: 'Profil', tabBarIcon: icon('person-outline') }} />
+      <Tabs.Screen name="shop" options={{ href: null, title: 'Boutique' }} />
     </Tabs>
   );
 }

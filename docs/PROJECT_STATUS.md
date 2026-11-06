@@ -57,3 +57,21 @@ Samedi/dimanche : horaires non connus. `typescript` 5.9 installé (Expo recomman
 - **Offres flash** : table `flash_offers` + RLS (migration `20261105000000_flash_offers.sql`, **à appliquer sur Supabase après validation**) ; création/arrêt dans `/admin` > onglet « Offres flash » ; écran `/offers` avec compte à rebours. **Limite** : l'espace client (connexion/inscription) n'est pas encore branché sur Supabase Auth ; l'écran membre n'affiche donc que des offres **démo**, accessibles seulement avec `EXPO_PUBLIC_DEMO_MODE=1` (entrées masquées sinon). Reste à faire : connexion client réelle, lecture des offres depuis `flash_offers`, règle d'application de la remise (code, validation en caisse).
 - **Chat IA** : écran `/assistant` + Vercel Function `api/chat.ts` (appel API Anthropic, clé côté serveur uniquement). Le prompt ne contient que les infos réelles (rituels, prix, horaires, règles cartes cadeaux), renvoie vers l'onglet Réservation, ne confirme aucun créneau, pas de conseil médical. Limite 20 requêtes / 10 min / IP (mémoire, par instance). Sans `ANTHROPIC_API_KEY` : message de repli + boutons écrire/appeler. **Non testé avec la vraie API.** `vercel.json` : le rewrite SPA exclut désormais `/api/`.
 - **À décider** : conservation/RGPD des conversations (rien n'est stocké), mention « assistant IA » (affichée), modèle (`ANTHROPIC_MODEL`, défaut claude-haiku-4-5).
+
+## Vidéo d'ouverture (06/11/2026)
+
+- Écran d'entrée : vidéo muette de 8 s (eau qui coule, vapeur, logo) jouée une seule fois, maintien sur la dernière image. Le bouton « Commencer » est disponible immédiatement.
+- Fallback : mouvement réduit, erreur de lecture ou vidéo indisponible → image finale fixe, navigation inchangée.
+- Production : **composition locale** (fondus FFmpeg entre les 8 frames fournies B1→B8), pas un moteur image-vers-vidéo. Script reproductible : `tools/opening/build_opening.py <dossier_frames> <sortie>`.
+- Assets : `apps/mobile/assets/video/opening.mp4` (H.264, yuv420p, faststart, 1024×1536, 30 fps), `assets/images/opening-first.jpg` (poster de départ), `assets/images/opening-poster.jpg` (poster final).
+- Limite connue : en cadrage plein écran (cover) sur un téléphone très allongé, les bords du logo peuvent être très légèrement rognés. À valider sur appareil réel.
+- Les maquettes A1–A7 fournies servent de direction artistique ; aucune n'est intégrée comme image interactive.
+
+## Refonte visuelle d'après les maquettes (06/11/2026)
+
+- Thème sombre et doré appliqué à toute l'app via les tokens partagés (`packages/ui/src/tokens.ts`) : noms historiques conservés (`brown` = texte crème, `ivory` = fond), ajout de `surface` et `onGold`.
+- Composants communs refaits (`ui.tsx`) : fond à halo doré, `ScreenHeader`, `Chip`, `SectionTitle`, cartes « verre », bouton or lumineux, champs sombres.
+- Navigation : onglets Accueil, Rituels, Réservation, Profil (comme la maquette). La liste des rituels devient l'onglet `/(tabs)/rituals` (ancien `app/rituals/index.tsx` supprimé) ; la boutique reste accessible depuis l'accueil et le menu (onglet masqué).
+- Écrans refaits : accueil (hero, carrousel de rituels, bouton Assistant), rituels, détail, réservation (étapes 1-2-3, calendrier mensuel avec jours fermés grisés, créneaux en grille, récapitulatif), offres flash (cartes photo, état verrouillé), assistant (bulles, puces Horaires/Tarifs/…), profil (avatar, lignes fonctionnelles et verrouillées, interrupteur d'ambiance sonore si une musique existe).
+- Aucune donnée, règle de réservation, requête ni route API n'a changé. Les maquettes (images générées) restent une direction artistique : les photos de l'app sont toujours celles du client.
+- Limites : une seule photo client est disponible (`hero.jpg`), réutilisée sur les cartes de rituels ; les offres flash restent démo/masquées hors `EXPO_PUBLIC_DEMO_MODE=1` ; « Créer mon compte » n'est pas proposé tant que l'authentification client n'existe pas.
