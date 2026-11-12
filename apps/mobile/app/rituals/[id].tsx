@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, radii, space } from '@ghs/ui';
 import { Body, Button, EmptyState, Screen, ScreenHeader, Title } from '../../src/components/ui';
-import { IMAGES } from '../../src/data/images';
+import { ritualImage } from '../../src/data/images';
 import { formatDuration, formatPrice, getRitual } from '../../src/data/rituals';
 
 export default function RitualDetail() {
@@ -17,7 +17,7 @@ export default function RitualDetail() {
     <Screen>
       <ScreenHeader title="" />
       <View style={s.imgWrap}>
-        <Image source={IMAGES.hero} contentFit="cover" contentPosition="center" style={StyleSheet.absoluteFill} />
+        <Image source={ritualImage(ritual.id)} contentFit="cover" contentPosition="center" style={StyleSheet.absoluteFill} />
         <LinearGradient colors={['rgba(14,10,7,0)', 'rgba(14,10,7,0.85)']} style={StyleSheet.absoluteFill} />
       </View>
       <Title style={{ marginTop: space.md }}>{ritual.name}</Title>

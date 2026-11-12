@@ -9,12 +9,13 @@ const ITEMS = [
   { label: 'Accueil', href: '/(tabs)' },
   { label: 'Nos rituels', href: '/rituals' },
   { label: 'Assistant', href: '/assistant' },
-  { label: 'Carte cadeau', href: '/gift-card' },
+  { label: 'Offrir une carte cadeau', href: '/gift-card' },
+  { label: 'Formation', href: '/formation' },
   { label: 'Boutique', href: '/(tabs)/shop' },
   { label: 'Entreprises & CE', href: '/corporate' },
   { label: 'Notre cabinet privé', href: '/about' },
   { label: 'À propos', href: '/about' },
-  { label: 'Contact', href: '/contact' },
+  { label: 'Nous contacter par mail', href: '/contact' },
 ] as const;
 
 export default function Menu() {

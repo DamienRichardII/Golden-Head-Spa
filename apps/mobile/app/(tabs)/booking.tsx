@@ -10,7 +10,7 @@ import { colors, fonts, radii, space } from '@ghs/ui';
 import { bookingSchema } from '@ghs/validation';
 import { z } from 'zod';
 import { Body, Button, Card, Field, Notice, Reveal, Screen, ScreenHeader } from '../../src/components/ui';
-import { IMAGES } from '../../src/data/images';
+import { ritualImage } from '../../src/data/images';
 import { formatDuration, formatPrice, getRitual, RITUALS } from '../../src/data/rituals';
 import {
   BookingError, cancelBooking, createBooking, fetchClosedDays, fetchSlots, formatDayLabel, formatLongDate, formatTime, getLastBooking, nextDays,
@@ -252,7 +252,7 @@ export default function Booking() {
           <Controller control={control} name="notes" render={({ field }) => (
             <Field label="Message (optionnel)" multiline value={field.value ?? ''} onChangeText={field.onChange} error={errors.notes?.message} />)} />
           <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-            <Image source={IMAGES.hero} contentFit="cover" contentPosition="center" style={{ width: 64, height: 64, borderRadius: radii.md }} />
+            <Image source={ritualImage(ritual.id)} contentFit="cover" contentPosition="center" style={{ width: 64, height: 64, borderRadius: radii.md }} />
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: fonts.serifSemi, fontSize: 20, color: colors.brown }}>{ritual.name}</Text>
               <Body muted>{formatDuration(ritual.durationMin)} · {formatPrice(ritual.priceEur)}</Body>

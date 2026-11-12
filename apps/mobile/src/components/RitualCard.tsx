@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { Ritual } from '@ghs/types';
 import { colors, fonts, radii, shadow, space } from '@ghs/ui';
-import { IMAGES } from '../data/images';
+import { ritualImage } from '../data/images';
 import { formatDuration, formatPrice } from '../data/rituals';
 
 const label = (r: Ritual) => `${r.name}, ${formatDuration(r.durationMin)}, ${formatPrice(r.priceEur)}`;
@@ -15,7 +15,7 @@ export function RitualCard({ ritual, featured }: { ritual: Ritual; featured?: bo
   return (
     <Link href={{ pathname: '/rituals/[id]', params: { id: ritual.id } }} asChild>
       <Pressable accessibilityRole="button" accessibilityLabel={label(ritual)} style={featured ? { ...s.row, ...shadow.glow, borderColor: colors.champagne } : s.row}>
-        <Image source={IMAGES.hero} contentFit="cover" contentPosition="center" style={s.img} />
+        <Image source={ritualImage(ritual.id)} contentFit="cover" contentPosition="center" style={s.img} />
         <View style={{ flex: 1 }}>
           <Text style={s.name}>{ritual.name}</Text>
           {ritual.tagline ? <Text style={s.tag} numberOfLines={2}>{ritual.tagline}</Text> : null}
@@ -36,7 +36,7 @@ export function RitualTile({ ritual }: { ritual: Ritual }) {
   return (
     <Link href={{ pathname: '/rituals/[id]', params: { id: ritual.id } }} asChild>
       <Pressable accessibilityRole="button" accessibilityLabel={label(ritual)} style={s.tile}>
-        <Image source={IMAGES.hero} contentFit="cover" contentPosition="center" style={StyleSheet.absoluteFill} />
+        <Image source={ritualImage(ritual.id)} contentFit="cover" contentPosition="center" style={StyleSheet.absoluteFill} />
         <LinearGradient colors={['rgba(14,10,7,0)', 'rgba(14,10,7,0.92)']} style={StyleSheet.absoluteFill} />
         <View style={{ padding: space.sm + 2 }}>
           <Text style={s.tileName} numberOfLines={2}>{ritual.name}</Text>

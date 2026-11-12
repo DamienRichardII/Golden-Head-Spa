@@ -75,3 +75,13 @@ Samedi/dimanche : horaires non connus. `typescript` 5.9 installé (Expo recomman
 - Écrans refaits : accueil (hero, carrousel de rituels, bouton Assistant), rituels, détail, réservation (étapes 1-2-3, calendrier mensuel avec jours fermés grisés, créneaux en grille, récapitulatif), offres flash (cartes photo, état verrouillé), assistant (bulles, puces Horaires/Tarifs/…), profil (avatar, lignes fonctionnelles et verrouillées, interrupteur d'ambiance sonore si une musique existe).
 - Aucune donnée, règle de réservation, requête ni route API n'a changé. Les maquettes (images générées) restent une direction artistique : les photos de l'app sont toujours celles du client.
 - Limites : une seule photo client est disponible (`hero.jpg`), réutilisée sur les cartes de rituels ; les offres flash restent démo/masquées hors `EXPO_PUBLIC_DEMO_MODE=1` ; « Créer mon compte » n'est pas proposé tant que l'authentification client n'existe pas.
+
+## Lot 1 — retours d'Inès (12/11/2026)
+
+Fait : écran d'ouverture (nom « Golden Head Spa » et vraie arche visibles tout de suite ; boutons « Prendre un RDV », « Offrir », « Tout découvrir ») ; barre flottante « Offrir / Réserver » présente dans toute l'application (masquée sur l'entrée, le menu, la réservation, la carte cadeau, l'assistant) ; une photo propre à chaque soin (8 photos fournies, `assets/images/rituals/`) ; page Formation (contenu à fournir, demande par mail via la messagerie de l'utilisateur, rien n'est envoyé par l'application) ; option « Nous contacter par mail » (contact + menu) ; accueil allégé (raccourcis Nos soins / Formation / Écrire / Boutique).
+
+Choix à valider : la vidéo d'ouverture actuelle est désactivée (`USE_VIDEO = false` dans `app/index.tsx`, code conservé) car elle montre une vasque et pas l'arche d'eau ; la nouvelle vidéo suivra avec les prompts v2. Associations photo ↔ soin faites d'après le contenu des images (Découverte/Essentielle/Excellence = arche ; L'Exception = massage visage-épaules ; Kids = enfant ; Golden Hour = huile ; Signature = pierres chaudes ; Relax = sauna) : modifiables dans `src/data/images.ts`.
+
+À venir (lots suivants) : agenda jour/semaine d'administration (créer, déplacer, annuler, fiche cliente, blocage de créneaux) ; offres flash réelles (authentification cliente) ; contenu Formation.
+
+Écarts à trancher avec la cliente : le site indique le dimanche 10h30–15h30, l'application suit les horaires confirmés (mardi–samedi 10h30–18h30) ; L'Exception (200 €) est dans l'application mais pas sur le site ; Planity reste le lien de réservation du site (risque de double agenda).

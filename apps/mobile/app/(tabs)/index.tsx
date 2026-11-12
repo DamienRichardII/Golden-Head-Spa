@@ -13,9 +13,9 @@ import { IMAGES } from '../../src/data/images';
 import { RITUALS } from '../../src/data/rituals';
 
 const QUICK = [
-  { label: 'Réserver', icon: 'calendar-outline', href: '/(tabs)/booking' },
-  { label: 'Carte cadeau', icon: 'gift-outline', href: '/gift-card' },
   { label: 'Nos soins', icon: 'sparkles-outline', href: '/rituals' },
+  { label: 'Formation', icon: 'school-outline', href: '/formation' },
+  { label: 'Écrire', icon: 'mail-outline', href: '/contact' },
   { label: 'Boutique', icon: 'bag-outline', href: '/(tabs)/shop' },
 ] as const;
 

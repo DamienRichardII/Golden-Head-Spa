@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, ReduceMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts, radii, shadow, space } from '@ghs/ui';
+import { QUICK_ACTIONS_SPACE } from './QuickActions';
 
 /** Fond commun : noir chaud avec halo doré discret en haut (ambiance des maquettes). */
 export function Screen({ children, bottomInset = 0 }: { children: ReactNode; dark?: boolean; bottomInset?: number }) {
@@ -16,7 +17,7 @@ export function Screen({ children, bottomInset = 0 }: { children: ReactNode; dar
       <LinearGradient pointerEvents="none" colors={['rgba(212,175,106,0.14)', 'rgba(212,175,106,0)']} style={s.glowTop} />
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingTop: insets.top + space.md, paddingHorizontal: space.md, paddingBottom: space.xxl + bottomInset }}
+        contentContainerStyle={{ paddingTop: insets.top + space.md, paddingHorizontal: space.md, paddingBottom: space.xxl + QUICK_ACTIONS_SPACE + bottomInset }}
         showsVerticalScrollIndicator={false}
       >
         {children}

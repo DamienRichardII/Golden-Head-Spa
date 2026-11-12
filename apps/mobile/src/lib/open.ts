@@ -10,4 +10,7 @@ export async function openPlanity(): Promise<boolean> {
   await WebBrowser.openBrowserAsync(PLANITY_BOOKING_URL);
   return true;
 }
-export const mailTo = (email: string) => Linking.openURL(`mailto:${email}`);
+export const mailTo = (email: string, opts?: { subject?: string; body?: string }) => {
+  const q = [opts?.subject ? `subject=${encodeURIComponent(opts.subject)}` : '', opts?.body ? `body=${encodeURIComponent(opts.body)}` : ''].filter(Boolean).join('&');
+  return Linking.openURL(`mailto:${email}${q ? `?${q}` : ''}`);
+};

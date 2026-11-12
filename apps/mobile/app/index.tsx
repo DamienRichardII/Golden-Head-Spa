@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Image, Text, View, StyleSheet, useWindowDimensions } from 'react-native';
+import { Image, Pressable, Text, View, StyleSheet, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -12,6 +12,14 @@ import { hasAmbient, startAmbient } from '../src/lib/ambient';
 const FIRST = require('../assets/images/opening-first.jpg');
 const POSTER = require('../assets/images/opening-poster.jpg');
 const VIDEO = require('../assets/video/opening.mp4');
+const ARCH = require('../assets/images/hero.jpg');
+
+/**
+ * Vidéo d'ouverture désactivée par défaut : la version actuelle (générée) montre une vasque et non l'arche d'eau, et le nom
+ * n'apparaît qu'à la fin. On affiche à la place la vraie photo de l'arche avec le nom tout de suite. Passer à `true` pour
+ * rejouer la vidéo (code conservé) quand la nouvelle vidéo « arche d'eau » sera prête.
+ */
+const USE_VIDEO = false;
 
 /** Si la lecture n'a pas démarré après ce délai (autoplay bloqué, économie d'énergie iOS…), on affiche l'image finale fixe. */
 const START_TIMEOUT_MS = 3500;
@@ -46,7 +54,7 @@ export default function Onboarding() {
   const { width, height } = useWindowDimensions();
   const reduce = useReducedMotion();
   const [failed, setFailed] = useState(false);
-  const staticMode = reduce || failed;
+  const staticMode = !USE_VIDEO || reduce || failed;
   const rm = ReduceMotion.System;
   const box = videoBox(width, height);
 
@@ -68,7 +76,11 @@ export default function Onboarding() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.black, overflow: 'hidden' }}>
-      <Image source={staticMode ? POSTER : FIRST} resizeMode="cover" style={frame} accessible={false} />
+      {USE_VIDEO ? (
+        <Image source={staticMode ? POSTER : FIRST} resizeMode="cover" style={frame} accessible={false} />
+      ) : (
+        <Image source={ARCH} resizeMode="cover" style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%' }} accessible={false} />
+      )}
       {!staticMode && (
         <VideoView
           player={player}
@@ -81,11 +93,21 @@ export default function Onboarding() {
         />
       )}
       {box.safe && <LinearGradient pointerEvents="none" colors={[colors.black, 'rgba(14,10,7,0)']} style={[s.topFade, { top: box.top, width }]} />}
-      <LinearGradient pointerEvents="none" colors={['rgba(23,20,17,0)', 'rgba(23,20,17,0)', 'rgba(23,20,17,0.85)']} style={s.fill} />
+      <LinearGradient pointerEvents="none" colors={['rgba(14,10,7,0.78)', 'rgba(14,10,7,0)', 'rgba(14,10,7,0.2)', 'rgba(14,10,7,0.92)']} locations={[0, 0.3, 0.55, 1]} style={s.fill} />
+      <View pointerEvents="none" style={[s.brandWrap, { top: insets.top + space.xl }]}>
+        <Animated.View entering={FadeIn.duration(500).reduceMotion(rm)} accessibilityRole="header" accessibilityLabel="Golden Head Spa">
+          <Text style={s.brand}>GOLDEN</Text>
+          <Text style={s.brandSub}>HEAD SPA</Text>
+          <Text style={s.values}>Compiègne</Text>
+        </Animated.View>
+      </View>
       <View pointerEvents="box-none" style={[s.wrap, { paddingBottom: insets.bottom + space.lg }]}>
-        <Animated.View entering={FadeIn.delay(600).duration(1200).reduceMotion(rm)}>
-          <Text style={s.values}>Détente  ·  Beauté  ·  Raffinement</Text>
-          <Button label="Commencer" onPress={() => { void startAmbient(); router.replace('/(tabs)'); }} />
+        <Animated.View entering={FadeIn.delay(300).duration(900).reduceMotion(rm)}>
+          <Button label="Prendre un RDV" onPress={() => { void startAmbient(); router.replace('/(tabs)/booking'); }} style={{ marginBottom: space.sm }} />
+          <Button label="Offrir" variant="ghost" onPress={() => { void startAmbient(); router.replace('/gift-card'); }} style={{ marginBottom: space.sm }} />
+          <Pressable accessibilityRole="button" onPress={() => { void startAmbient(); router.replace('/(tabs)'); }} hitSlop={8} style={s.discover}>
+            <Text style={s.discoverText}>Tout découvrir</Text>
+          </Pressable>
           {hasAmbient && <Text style={s.hint}>Une musique de détente accompagne votre visite</Text>}
         </Animated.View>
       </View>
@@ -97,6 +119,11 @@ const s = StyleSheet.create({
   fill: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
   topFade: { position: 'absolute', left: 0, height: 110 },
   wrap: { flex: 1, justifyContent: 'flex-end', paddingHorizontal: space.lg },
-  values: { fontFamily: fonts.sans, color: '#F3E9D6', textAlign: 'center', marginBottom: space.lg, fontSize: 13, letterSpacing: 1 },
+  brandWrap: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
+  brand: { fontFamily: fonts.serif, fontSize: 46, color: colors.champagne, letterSpacing: 6, textAlign: 'center' },
+  brandSub: { fontFamily: fonts.serif, fontSize: 22, color: colors.champagne, letterSpacing: 6, textAlign: 'center' },
+  values: { fontFamily: fonts.sans, color: '#F3E9D6', textAlign: 'center', marginTop: space.sm, fontSize: 13, letterSpacing: 3, textTransform: 'uppercase' },
+  discover: { alignItems: 'center', paddingVertical: space.sm },
+  discoverText: { fontFamily: fonts.sansMedium, fontSize: 15, color: '#F3E9D6', textDecorationLine: 'underline' },
   hint: { fontFamily: fonts.sans, color: '#D9CDB8', textAlign: 'center', fontSize: 12, marginTop: space.md },
 });
