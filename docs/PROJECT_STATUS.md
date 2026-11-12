@@ -85,3 +85,11 @@ Choix à valider : la vidéo d'ouverture actuelle est désactivée (`USE_VIDEO =
 À venir (lots suivants) : agenda jour/semaine d'administration (créer, déplacer, annuler, fiche cliente, blocage de créneaux) ; offres flash réelles (authentification cliente) ; contenu Formation.
 
 Écarts à trancher avec la cliente : le site indique le dimanche 10h30–15h30, l'application suit les horaires confirmés (mardi–samedi 10h30–18h30) ; L'Exception (200 €) est dans l'application mais pas sur le site ; Planity reste le lien de réservation du site (risque de double agenda).
+
+## Lots 3 et 4 — Journal bien-être et agenda d'administration (12/11/2026)
+
+Fait : onglet « Journal » (phrases et articles publiés par la gérante, phrase du moment sur l'accueil) ; administration : onglet Journal (écrire, publier, dépublier, supprimer) et onglet Agenda jour / semaine (grille horaire, créer un rendez-vous à la main avec email facultatif, déplacer, annuler, bloquer et débloquer un créneau). Les créneaux bloqués disparaissent de la réservation en ligne.
+
+Base de données : migrations `20261112000000_journal.sql` et `20261112000100_agenda.sql`, **NON appliquées sur Supabase** (en attente d'accord). Tests SQL : 38 vérifications (RLS, droits admin, chevauchements, blocages). Tant que les migrations ne sont pas appliquées, le Journal affiche « Bientôt ici » et l'agenda signale que la migration manque ; le reste de l'application n'est pas affecté.
+
+Pas encore fait : notifications sur téléphone (exigent l'application native EAS, des comptes Apple/Google et l'accord des clientes), emails et SMS de confirmation, avis modérés (lot 2, reporté à la demande du client).

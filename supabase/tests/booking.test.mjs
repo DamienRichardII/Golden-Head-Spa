@@ -8,7 +8,7 @@ const db = new PGlite({ extensions: { btree_gist, pgcrypto } });
 await db.exec(`create role anon; create role authenticated; create schema auth;
  create table auth.users (id uuid primary key default gen_random_uuid(), raw_user_meta_data jsonb);
  create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.sub', true), '')::uuid $$;`);
-for (const f of ['migrations/20261015000000_init_core.sql', 'seed.sql', 'migrations/20261016000000_booking.sql', 'migrations/20261016000200_opening_hours.sql', 'migrations/20261105000000_flash_offers.sql']) await db.exec(fs.readFileSync(R + f, 'utf8'));
+for (const f of ['migrations/20261015000000_init_core.sql', 'seed.sql', 'migrations/20261016000000_booking.sql', 'migrations/20261016000200_opening_hours.sql', 'migrations/20261105000000_flash_offers.sql', 'migrations/20261112000000_journal.sql', 'migrations/20261112000100_agenda.sql']) await db.exec(fs.readFileSync(R + f, 'utf8'));
 // Comme sur Supabase : les droits de table sont accordés, c'est la RLS qui fait le tri.
 await db.exec('grant usage on schema public, auth to anon, authenticated; grant all on all tables in schema public to anon, authenticated; grant select on auth.users to authenticated;');
 let fail = 0;
@@ -82,4 +82,34 @@ ok(seen.length === 1 && seen[0] === 'En cours', `un membre ne voit que l’offre
 ok((await as('authenticated', client, "insert into flash_offers (title, discount_percent, starts_at, ends_at) values ('x', 5, now(), now() + interval '1 hour') returning 1")).error !== undefined, 'un membre ne peut pas créer d’offre');
 ok((await as('authenticated', admin, "insert into flash_offers (title, discount_percent, starts_at, ends_at) values ('Nouvelle', 20, now(), now() + interval '2 hours') returning 1")).rows.length === 1, 'l’admin peut créer une offre');
 ok((await as('authenticated', admin, "insert into flash_offers (title, discount_percent, starts_at, ends_at) values ('Mauvaise', 20, now(), now() - interval '1 hour') returning 1")).error !== undefined, 'une offre qui finit avant de commencer est refusée');
+// --- Journal bien-être : seul le publié est visible de tous ; seule l'admin écrit ---
+await db.exec("insert into journal_posts (kind, title, body, published) values ('article', 'Respirer', 'Trois respirations lentes.', true), ('phrase', null, 'Offrez-vous une pause.', true), ('article', 'Brouillon', 'Pas encore prêt.', false)");
+ok((await as('anon', null, 'select * from journal_posts')).rows.length === 2, 'anon ne voit que les posts publiés');
+ok((await db.query("select count(*)::int c from journal_posts where published and published_at is not null")).rows[0].c === 2, 'date de publication posée par la base');
+ok((await as('authenticated', client, "insert into journal_posts (kind, body) values ('phrase', 'x y') returning 1")).error !== undefined, 'un membre ne peut pas publier');
+ok((await as('anon', null, "insert into journal_posts (kind, body) values ('phrase', 'x y') returning 1")).error !== undefined, 'anon ne peut pas publier');
+ok((await as('authenticated', admin, "insert into journal_posts (kind, body, published) values ('phrase', 'Respirez.', true) returning 1")).rows.length === 1, 'l’admin peut publier une phrase');
+ok((await as('authenticated', admin, "insert into journal_posts (kind, body) values ('article', 'Sans titre ici') returning 1")).error !== undefined, 'un article sans titre est refusé');
+await db.exec("update journal_posts set published = false where title = 'Respirer'");
+ok((await as('anon', null, 'select * from journal_posts')).rows.length === 2, 'un post dépublié disparaît');
+// --- Agenda : rendez-vous manuel, déplacement, créneaux bloqués ---
+const wed = day(3, 20);
+const ws = await slots('decouverte', wed);
+const adm = (sql) => as('authenticated', admin, sql);
+const ab = await adm(`select * from admin_create_booking('decouverte', '${ws[0]}'::timestamptz, 'Cliente Tel', '06 11 22 33 44', null, 'par téléphone')`);
+ok(ab.rows.length === 1, 'l’admin crée un rendez-vous sans email');
+ok((await as('authenticated', client, `select * from admin_create_booking('decouverte', '${ws[3]}'::timestamptz, 'X Y', '0611223344')`)).error?.includes('forbidden'), 'un membre ne peut pas créer un rendez-vous admin');
+ok((await as('anon', null, `select * from admin_create_booking('decouverte', '${ws[3]}'::timestamptz, 'X Y', '0611223344')`)).error !== undefined, 'anon ne peut pas créer un rendez-vous admin');
+ok((await adm(`select * from admin_create_booking('decouverte', '${ws[1]}'::timestamptz, 'Chevauche', '0611223344')`)).error?.includes('slot_unavailable'), 'chevauchement refusé même pour l’admin');
+const bid = ab.rows[0].booking_id;
+ok((await adm(`select admin_move_booking('${bid}', '${ws[6]}'::timestamptz) as r`)).rows[0]?.r === true, 'l’admin déplace un rendez-vous');
+const sw = await slots('decouverte', wed);
+ok(sw.includes(ws[0]) && !sw.includes(ws[6]), 'ancien créneau libéré, nouveau pris');
+ok((await adm(`select admin_move_booking('${bid}', '${ws[6]}'::timestamp at time zone 'UTC' + interval '10 minutes') as r`)).error === undefined, 'déplacement hors grille accepté (choix de la gérante)');
+ok((await as('authenticated', client, `select admin_move_booking('${bid}', '${ws[8]}'::timestamptz) as r`)).error?.includes('forbidden'), 'un membre ne peut pas déplacer');
+await adm(`insert into blocked_slots (starts_at, ends_at, reason) values ('${ws[10]}'::timestamptz, '${ws[10]}'::timestamptz + interval '90 minutes', 'Pause')`);
+const sb = await slots('decouverte', wed);
+ok(!sb.includes(ws[10]) && !sb.includes(ws[11]), 'créneaux bloqués retirés de la réservation en ligne');
+ok((await as('anon', null, 'select * from blocked_slots')).rows.length === 0, 'anon ne voit pas les blocages');
+ok((await as('authenticated', client, "insert into blocked_slots (starts_at, ends_at) values (now(), now() + interval '1 hour') returning 1")).error !== undefined, 'un membre ne peut pas bloquer');
 console.log(fail ? `\n${fail} ECHEC(S)` : '\nTOUT OK'); process.exit(fail ? 1 : 0);

@@ -122,11 +122,11 @@ export function Notice({ children }: { children: ReactNode }) {
 }
 
 export function Field(props: TextInputProps & { label: string; error?: string }) {
-  const { label, error, ...rest } = props;
+  const { label, error, style, ...rest } = props;
   return (
     <View style={{ marginBottom: space.md }}>
       <Text style={s.label}>{label}</Text>
-      <TextInput accessibilityLabel={label} placeholderTextColor={colors.muted} style={[s.input, error && { borderColor: colors.danger }]} {...rest} />
+      <TextInput accessibilityLabel={label} placeholderTextColor={colors.muted} style={[s.input, style, error && { borderColor: colors.danger }]} {...rest} />
       {error ? <Text style={{ color: colors.danger, fontSize: 12, marginTop: 4 }}>{error}</Text> : null}
     </View>
   );

@@ -53,6 +53,36 @@ export const flashOfferSchema = z.object({
 }).refine((v) => new Date(v.endsAt) > new Date(v.startsAt), { message: 'La fin doit suivre le début', path: ['endsAt'] });
 export type FlashOfferInput = z.infer<typeof flashOfferSchema>;
 
+export const journalPostSchema = z.object({
+  kind: z.enum(['phrase', 'article']),
+  title: z.string().trim().max(120).optional(),
+  body: z.string().trim().min(2, 'Texte requis').max(8000),
+}).superRefine((v, ctx) => {
+  if (v.kind === 'article' && (v.title?.length ?? 0) < 2) ctx.addIssue({ code: 'custom', path: ['title'], message: 'Titre requis pour un article' });
+});
+export type JournalPostInput = z.infer<typeof journalPostSchema>;
+
+const dayRegex = /^\d{4}-\d{2}-\d{2}$/;
+const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
+export const adminBookingSchema = z.object({
+  serviceSlug: z.string().min(1, 'Choisissez un soin'),
+  day: z.string().regex(dayRegex, 'Date invalide (AAAA-MM-JJ)'),
+  time: z.string().regex(timeRegex, 'Heure invalide (10:30)'),
+  name: z.string().trim().min(2, 'Nom requis').max(80),
+  phone: z.string().trim().regex(/^[0-9+()\s.-]{6,20}$/, 'Téléphone invalide'),
+  email: z.union([z.literal(''), emailSchema]).optional(),
+  notes: z.string().trim().max(500).optional(),
+});
+export type AdminBookingInput = z.infer<typeof adminBookingSchema>;
+
+export const blockedSlotSchema = z.object({
+  day: z.string().regex(dayRegex, 'Date invalide (AAAA-MM-JJ)'),
+  start: z.string().regex(timeRegex, 'Début invalide (10:30)'),
+  end: z.string().regex(timeRegex, 'Fin invalide (12:00)'),
+  reason: z.string().trim().max(120).optional(),
+}).refine((v) => v.end > v.start, { message: 'La fin doit suivre le début', path: ['end'] });
+export type BlockedSlotInput = z.infer<typeof blockedSlotSchema>;
+
 export const CHAT_MAX_MESSAGES = 12;
 export const CHAT_MAX_CHARS = 500;
 export const chatRequestSchema = z.object({

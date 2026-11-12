@@ -10,6 +10,7 @@ const ITEMS = [
   { label: 'Nos rituels', href: '/rituals' },
   { label: 'Assistant', href: '/assistant' },
   { label: 'Offrir une carte cadeau', href: '/gift-card' },
+  { label: 'Journal bien-être', href: '/(tabs)/journal' },
   { label: 'Formation', href: '/formation' },
   { label: 'Boutique', href: '/(tabs)/shop' },
   { label: 'Entreprises & CE', href: '/corporate' },

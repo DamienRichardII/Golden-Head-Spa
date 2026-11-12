@@ -1,17 +1,19 @@
 // Chargement des données au montage des onglets : usage légitime des effets (pas de bibliothèque de requêtes ici).
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { colors, fonts, radii, space } from '@ghs/ui';
 import { Body, Button, Card, Field, Notice, Screen, Title } from '../src/components/ui';
 import { flashOfferSchema } from '@ghs/validation';
 import { RITUALS } from '../src/data/rituals';
 import { formatLongDate, formatTime } from '../src/lib/booking';
 import { adminClient } from '../src/lib/adminClient';
+import { AgendaAdmin } from '../src/admin/AgendaAdmin';
+import { JournalAdmin } from '../src/admin/JournalAdmin';
 
-type Tab = 'bookings' | 'hours' | 'closures' | 'offers';
+type Tab = 'agenda' | 'bookings' | 'journal' | 'hours' | 'closures' | 'offers';
 interface BookingRow {
-  id: string; reference: string; starts_at: string; ends_at: string; customer_name: string; customer_email: string;
+  id: string; reference: string; starts_at: string; ends_at: string; customer_name: string; customer_email: string | null;
   customer_phone: string; notes: string | null; status: 'confirmed' | 'cancelled'; service: { name: string } | { name: string }[] | null;
 }
 interface HourRow { weekday: number; open: boolean; openTime: string; closeTime: string }
@@ -31,7 +33,7 @@ export default function Admin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | undefined>();
-  const [tab, setTab] = useState<Tab>('bookings');
+  const [tab, setTab] = useState<Tab>('agenda');
 
   const check = useCallback(async () => {
     if (!adminClient) { setReady(true); return; }
@@ -87,14 +89,16 @@ export default function Admin() {
         <Title>Administration</Title>
         <Pressable onPress={signOut} accessibilityRole="button"><Text style={{ fontFamily: fonts.sansMedium, color: colors.champagneDark }}>Déconnexion</Text></Pressable>
       </View>
-      <View style={{ flexDirection: 'row', gap: space.sm, marginVertical: space.md }}>
-        {([['bookings', 'Rendez-vous'], ['hours', 'Horaires'], ['closures', 'Fermetures'], ['offers', 'Offres flash']] as const).map(([key, label]) => (
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: space.md, flexGrow: 0 }} contentContainerStyle={{ gap: space.sm }}>
+        {([['agenda', 'Agenda'], ['bookings', 'Liste'], ['journal', 'Journal'], ['hours', 'Horaires'], ['closures', 'Fermetures'], ['offers', 'Offres flash']] as const).map(([key, label]) => (
           <Pressable key={key} accessibilityRole="tab" accessibilityState={{ selected: tab === key }} onPress={() => setTab(key)}
             style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: radii.pill, backgroundColor: tab === key ? colors.champagne : colors.beige }}>
             <Text style={{ fontFamily: fonts.sansMedium, fontSize: 13, color: tab === key ? colors.onGold : colors.brown }}>{label}</Text>
           </Pressable>
         ))}
-      </View>
+      </ScrollView>
+      {tab === 'agenda' && <AgendaAdmin />}
+      {tab === 'journal' && <JournalAdmin />}
       {tab === 'bookings' && <Bookings />}
       {tab === 'hours' && <Hours />}
       {tab === 'closures' && <Closures />}
@@ -138,7 +142,7 @@ function Bookings() {
         <Card key={r.id} style={{ marginBottom: space.sm, opacity: r.status === 'cancelled' ? 0.55 : 1 }}>
           <Text style={{ fontFamily: fonts.sansSemi, color: colors.brown, textTransform: 'capitalize' }}>{formatLongDate(r.starts_at)} · {formatTime(r.starts_at)} – {formatTime(r.ends_at)}</Text>
           <Body style={{ marginTop: 2 }}>{serviceName(r.service)} · {r.customer_name}</Body>
-          <Body muted style={{ fontSize: 13 }}>{r.customer_phone} · {r.customer_email}</Body>
+          <Body muted style={{ fontSize: 13 }}>{r.customer_phone}{r.customer_email ? ` · ${r.customer_email}` : ''}</Body>
           {r.notes ? <Body muted style={{ fontSize: 13, marginTop: 4 }}>« {r.notes} »</Body> : null}
           <Body muted style={{ fontSize: 12, marginTop: 4 }}>Réf. {r.reference}{r.status === 'cancelled' ? ' · ANNULÉ' : ''}</Body>
           {r.status === 'confirmed' && (

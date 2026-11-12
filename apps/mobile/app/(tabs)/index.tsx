@@ -1,4 +1,5 @@
 import { Pressable, ScrollView, Text, View, StyleSheet } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useRouter } from 'expo-router';
@@ -11,6 +12,7 @@ import { DEMO_MODE } from '../../src/store/session';
 import { RitualTile } from '../../src/components/RitualCard';
 import { IMAGES } from '../../src/data/images';
 import { RITUALS } from '../../src/data/rituals';
+import { fetchJournal } from '../../src/lib/journal';
 
 const QUICK = [
   { label: 'Nos soins', icon: 'sparkles-outline', href: '/rituals' },
@@ -24,6 +26,8 @@ const REVIEW_QUOTES = ['Une expérience inoubliable.', 'Un lieu magique.', 'Un v
 
 export default function Home() {
   const router = useRouter();
+  const { data: posts } = useQuery({ queryKey: ['journal'], queryFn: () => fetchJournal(), staleTime: 60_000 });
+  const phrase = posts?.find((p) => p.kind === 'phrase');
   return (
     <Screen>
       <Reveal>
@@ -64,6 +68,12 @@ export default function Home() {
       </Reveal>
 
       <Reveal index={3}>
+        {phrase && (
+          <Pressable accessibilityRole="button" onPress={() => router.push('/(tabs)/journal')} style={s.phrase}>
+            <Ionicons name="leaf-outline" size={18} color={colors.champagne} />
+            <Text style={s.phraseText} numberOfLines={3}>{phrase.body}</Text>
+          </Pressable>
+        )}
         {DEMO_MODE && (
           <Pressable accessibilityRole="button" onPress={() => router.push('/offers')} style={[s.flash, shadow.glow]}>
             <Ionicons name="flash-outline" size={22} color={colors.champagneDark} />
@@ -122,6 +132,8 @@ const s = StyleSheet.create({
   quickIcon: { width: 56, height: 56, borderRadius: radii.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center' },
   quickLabel: { fontFamily: fonts.sansMedium, fontSize: 11, color: colors.brown, marginTop: 6, textAlign: 'center' },
   flash: { flexDirection: 'row', alignItems: 'center', gap: space.md, backgroundColor: colors.surface, borderRadius: radii.lg, padding: space.md, marginTop: space.md, borderWidth: 1, borderColor: colors.champagne },
+  phrase: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm, backgroundColor: colors.surface, borderRadius: radii.lg, padding: space.md, marginTop: space.md, borderWidth: 1, borderColor: colors.line },
+  phraseText: { flex: 1, fontFamily: fonts.serif, fontSize: 19, lineHeight: 25, color: colors.brown },
   flashTitle: { fontFamily: fonts.sansSemi, fontSize: 15, color: colors.brown },
   flashSub: { fontFamily: fonts.sans, fontSize: 12, color: colors.muted },
   addr: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginTop: space.sm },
