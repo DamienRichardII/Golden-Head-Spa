@@ -93,3 +93,18 @@ Fait : onglet « Journal » (phrases et articles publiés par la gérante, phras
 Base de données : migrations `20261112000000_journal.sql` et `20261112000100_agenda.sql`, **NON appliquées sur Supabase** (en attente d'accord). Tests SQL : 38 vérifications (RLS, droits admin, chevauchements, blocages). Tant que les migrations ne sont pas appliquées, le Journal affiche « Bientôt ici » et l'agenda signale que la migration manque ; le reste de l'application n'est pas affecté.
 
 Pas encore fait : notifications sur téléphone (exigent l'application native EAS, des comptes Apple/Google et l'accord des clientes), emails et SMS de confirmation, avis modérés (lot 2, reporté à la demande du client).
+
+## Lot 5 — Fidélité, Golden Académie, notifications (16/11/2026)
+
+Demandes d'Inès : programme Fidélité, accès formation, notifications du blog.
+
+**Fidélité** (aucune migration) : paliers dans `src/lib/loyalty.ts` (3e rendez-vous −10 %, 4e −15 %, 5e et suivants −20 % — **à confirmer auprès d'Inès**, le message disait « 4eme » deux fois). La cliente est reconnue par son téléphone (9 derniers chiffres) ou son e-mail ; seuls les rendez-vous confirmés comptent (une annulation ne compte pas). L'agenda et la liste d'administration affichent « Fidélité : rendez-vous n°X → −Y % » ; la remise est appliquée par l'institut au paiement en cabinet. Page publique `/loyalty`.
+
+**Golden Académie** : contenu stocké en base (jamais dans le code public), lisible uniquement des élèves inscrites (table `academie_access`, e-mail vérifié par le code de connexion Supabase) et de l'administratrice. Écran `/academie` (connexion par code e-mail, modules), onglet d'administration « Académie » (inscrire / retirer une élève, créer / publier les modules, lien vidéo privé https). Contenu à saisir : modules 1 à 9 reçus en PDF ; modules 10 à 12 incomplets ou absents ; aucune vidéo fournie.
+
+**Notifications** : table `push_devices` (inscription par fonction `register_push_device`), fonction serveur `api/push` (vérifie le rôle admin, aucune clé secrète), bouton « Notifier les clientes » dans l'onglet Journal (actif seulement si des appareils sont inscrits). Pas encore fait : l'inscription côté application (dépendance `expo-notifications`, build EAS, comptes Apple/Google, consentement).
+
+Base de données : migration `20261116000000_academie_push.sql`, **NON appliquée** (en attente d'accord). Tests SQL : 57 vérifications.
+
+Prérequis Supabase pour l'Académie : activer la connexion par e-mail et adapter le modèle d'e-mail « Magic Link » pour y inclure le code à 6 chiffres (`{{ .Token }}`) ; prévoir un SMTP personnalisé (le service intégré est limité à quelques e-mails par heure).
+

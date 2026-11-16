@@ -10,8 +10,11 @@ import { formatLongDate, formatTime } from '../src/lib/booking';
 import { adminClient } from '../src/lib/adminClient';
 import { AgendaAdmin } from '../src/admin/AgendaAdmin';
 import { JournalAdmin } from '../src/admin/JournalAdmin';
+import { AcademieAdmin } from '../src/admin/AcademieAdmin';
+import { fetchLoyaltyHistory } from '../src/admin/loyaltyData';
+import { loyaltyFor, loyaltyLabel, type HistoryRow } from '../src/lib/loyalty';
 
-type Tab = 'agenda' | 'bookings' | 'journal' | 'hours' | 'closures' | 'offers';
+type Tab = 'agenda' | 'bookings' | 'journal' | 'academie' | 'hours' | 'closures' | 'offers';
 interface BookingRow {
   id: string; reference: string; starts_at: string; ends_at: string; customer_name: string; customer_email: string | null;
   customer_phone: string; notes: string | null; status: 'confirmed' | 'cancelled'; service: { name: string } | { name: string }[] | null;
@@ -90,7 +93,7 @@ export default function Admin() {
         <Pressable onPress={signOut} accessibilityRole="button"><Text style={{ fontFamily: fonts.sansMedium, color: colors.champagneDark }}>Déconnexion</Text></Pressable>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: space.md, flexGrow: 0 }} contentContainerStyle={{ gap: space.sm }}>
-        {([['agenda', 'Agenda'], ['bookings', 'Liste'], ['journal', 'Journal'], ['hours', 'Horaires'], ['closures', 'Fermetures'], ['offers', 'Offres flash']] as const).map(([key, label]) => (
+        {([['agenda', 'Agenda'], ['bookings', 'Liste'], ['journal', 'Journal'], ['academie', 'Académie'], ['hours', 'Horaires'], ['closures', 'Fermetures'], ['offers', 'Offres flash']] as const).map(([key, label]) => (
           <Pressable key={key} accessibilityRole="tab" accessibilityState={{ selected: tab === key }} onPress={() => setTab(key)}
             style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: radii.pill, backgroundColor: tab === key ? colors.champagne : colors.beige }}>
             <Text style={{ fontFamily: fonts.sansMedium, fontSize: 13, color: tab === key ? colors.onGold : colors.brown }}>{label}</Text>
@@ -99,6 +102,7 @@ export default function Admin() {
       </ScrollView>
       {tab === 'agenda' && <AgendaAdmin />}
       {tab === 'journal' && <JournalAdmin />}
+      {tab === 'academie' && <AcademieAdmin />}
       {tab === 'bookings' && <Bookings />}
       {tab === 'hours' && <Hours />}
       {tab === 'closures' && <Closures />}
@@ -112,6 +116,7 @@ function Bookings() {
   const [error, setError] = useState<string | undefined>();
   const [confirming, setConfirming] = useState<string | undefined>();
   const [showCancelled, setShowCancelled] = useState(false);
+  const [history, setHistory] = useState<HistoryRow[]>([]);
 
   const load = useCallback(async () => {
     if (!adminClient) return;
@@ -122,6 +127,7 @@ function Bookings() {
     if (e) setError('Chargement impossible.'); else { setError(undefined); setRows((data ?? []) as unknown as BookingRow[]); }
   }, []);
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void fetchLoyaltyHistory().then(setHistory); }, [rows]);
 
   const cancel = async (id: string) => {
     if (!adminClient) return;
@@ -144,6 +150,7 @@ function Bookings() {
           <Body style={{ marginTop: 2 }}>{serviceName(r.service)} · {r.customer_name}</Body>
           <Body muted style={{ fontSize: 13 }}>{r.customer_phone}{r.customer_email ? ` · ${r.customer_email}` : ''}</Body>
           {r.notes ? <Body muted style={{ fontSize: 13, marginTop: 4 }}>« {r.notes} »</Body> : null}
+          {r.status === 'confirmed' && (() => { const l = loyaltyLabel(loyaltyFor(r, history)); return l ? <Text style={{ fontFamily: fonts.sansSemi, fontSize: 13, color: colors.champagneDark, marginTop: 4 }}>{l}</Text> : null; })()}
           <Body muted style={{ fontSize: 12, marginTop: 4 }}>Réf. {r.reference}{r.status === 'cancelled' ? ' · ANNULÉ' : ''}</Body>
           {r.status === 'confirmed' && (
             confirming === r.id

@@ -7,8 +7,9 @@ import { journalPostSchema } from '@ghs/validation';
 import { Body, Button, Card, Field, Notice } from '../components/ui';
 import { adminClient } from '../lib/adminClient';
 import { excerpt, formatPostDate } from '../lib/journal';
+import { sendPush } from '../lib/pushApi';
 
-interface Row { id: string; kind: 'phrase' | 'article'; title: string | null; body: string; published: boolean; published_at: string | null; created_at: string }
+interface Row { id: string; kind: 'phrase' | 'article'; title: string | null; body: string; published: boolean; published_at: string | null; created_at: string; notified_at: string | null }
 
 /** Journal bien-être : la gérante écrit ici ; seuls les textes publiés apparaissent dans l'application. */
 export function JournalAdmin() {
@@ -18,11 +19,15 @@ export function JournalAdmin() {
   const [body, setBody] = useState('');
   const [msg, setMsg] = useState<string | undefined>();
   const [confirming, setConfirming] = useState<string | undefined>();
+  const [devices, setDevices] = useState(0);
+  const [notifying, setNotifying] = useState<string | undefined>();
 
   const load = useCallback(async () => {
     if (!adminClient) return;
-    const { data, error } = await adminClient.from('journal_posts').select('id,kind,title,body,published,published_at,created_at').order('created_at', { ascending: false }).limit(100);
+    const { data, error } = await adminClient.from('journal_posts').select('id,kind,title,body,published,published_at,created_at,notified_at').order('created_at', { ascending: false }).limit(100);
     if (error) setMsg('Chargement impossible (la migration du journal est-elle appliquée ?).'); else setRows((data ?? []) as Row[]);
+    const { count } = await adminClient.from('push_devices').select('token', { count: 'exact', head: true });
+    setDevices(count ?? 0);
   }, []);
   useEffect(() => { void load(); }, [load]);
 
@@ -37,11 +42,22 @@ export function JournalAdmin() {
     setTitle(''); setBody(''); await load();
   };
   const toggle = async (r: Row) => { await adminClient?.from('journal_posts').update({ published: !r.published }).eq('id', r.id); await load(); };
+  const notify = async (r: Row) => {
+    if (!adminClient) return;
+    const { data } = await adminClient.auth.getSession();
+    const token = data.session?.access_token;
+    setNotifying(undefined);
+    if (!token) { setMsg('Session expirée : reconnectez-vous.'); return; }
+    const sent = await sendPush(token, { title: r.title ?? 'Golden Head Spa', body: excerpt(r.body, 150), postId: r.id });
+    setMsg(sent === undefined ? 'Envoi impossible pour le moment.' : `Notification envoyée à ${sent} appareil${sent > 1 ? 's' : ''}.`);
+    await load();
+  };
   const remove = async (id: string) => { await adminClient?.from('journal_posts').delete().eq('id', id); setConfirming(undefined); await load(); };
 
   return (
     <View>
       <Body muted style={{ marginBottom: space.md }}>Une phrase s'affiche en grand sur l'accueil et dans le Journal. Un article a un titre et se lit dans le Journal.</Body>
+      <Notice>{devices > 0 ? `${devices} appareil${devices > 1 ? 's' : ''} inscrit${devices > 1 ? 's' : ''} aux notifications.` : 'Aucun appareil inscrit aux notifications : elles ne fonctionnent que dans l\'application installée depuis les stores (version à venir).'}</Notice>
       <Card style={{ marginBottom: space.md }}>
         <View style={{ flexDirection: 'row', gap: space.sm, marginBottom: space.md }}>
           {([['phrase', 'Phrase'], ['article', 'Article']] as const).map(([k, label]) => (
@@ -71,6 +87,11 @@ export function JournalAdmin() {
               ? <Button label="Confirmer" onPress={() => remove(r.id)} style={{ flex: 1, minHeight: 44 }} />
               : <Button label="Supprimer" variant="ghost" onPress={() => setConfirming(r.id)} style={{ flex: 1, minHeight: 44 }} />}
           </View>
+          {r.published && devices > 0 && (r.notified_at
+            ? <Body muted style={{ fontSize: 12, marginTop: space.sm }}>Notifié le {formatPostDate(r.notified_at)}</Body>
+            : notifying === r.id
+              ? <Button label={`Confirmer l'envoi à ${devices} appareil${devices > 1 ? 's' : ''}`} onPress={() => notify(r)} style={{ marginTop: space.sm, minHeight: 44 }} />
+              : <Button label="Notifier les clientes" variant="ghost" onPress={() => setNotifying(r.id)} style={{ marginTop: space.sm, minHeight: 44 }} />)}
         </Card>
       ))}
     </View>

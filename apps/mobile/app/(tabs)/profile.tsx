@@ -19,6 +19,7 @@ type Row = { label: string; icon: keyof typeof Ionicons.glyphMap; href?: string 
 const LIVE: Row[] = [
   { label: 'Mes réservations', icon: 'calendar-outline', href: '/(tabs)/booking' },
   { label: 'Cartes cadeaux', icon: 'gift-outline', href: '/gift-card' },
+  { label: 'Programme Fidélité', icon: 'ribbon-outline', href: '/loyalty' },
   { label: 'Contact', icon: 'location-outline', href: '/contact' },
 ];
 const LOCKED: Row[] = [

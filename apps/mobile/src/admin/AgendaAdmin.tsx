@@ -8,6 +8,8 @@ import { adminBookingSchema, blockedSlotSchema } from '@ghs/validation';
 import { Body, Button, Card, Field, Notice } from '../components/ui';
 import { RITUALS } from '../data/rituals';
 import { adminClient } from '../lib/adminClient';
+import { loyaltyFor, loyaltyLabel, type HistoryRow } from '../lib/loyalty';
+import { fetchLoyaltyHistory } from './loyaltyData';
 import {
   addDays, blockLayout, dayLabel, floorHalfHour, minutesToHM, parisDay, parisHM, parisMinutes, parisToIso, todayParis, weekOf,
 } from '../lib/agenda';
@@ -45,6 +47,7 @@ export function AgendaAdmin() {
   const [panel, setPanel] = useState<Panel>();
   const [msg, setMsg] = useState<string | undefined>();
   const [confirming, setConfirming] = useState(false);
+  const [history, setHistory] = useState<HistoryRow[]>([]);
 
   const days = useMemo(() => (view === 'week' ? weekOf(anchor) : [anchor]), [view, anchor]);
   const first = days[0] as string;
@@ -66,6 +69,7 @@ export function AgendaAdmin() {
     setHours((h.data ?? []) as Hours[]); setClosures((c.data ?? []) as Closure[]);
   }, [first, last]);
   useEffect(() => { setSel(undefined); void load(); }, [load]);
+  useEffect(() => { void fetchLoyaltyHistory().then(setHistory); }, [appts]);
 
   const dow = (day: string) => new Date(`${day}T12:00:00Z`).getUTCDay();
   const hoursOf = (day: string) => hours.find((h) => h.weekday === dow(day));
@@ -129,6 +133,7 @@ export function AgendaAdmin() {
           <Text style={{ fontFamily: fonts.sansSemi, fontSize: 16, color: colors.brown }}>{parisHM(selected.starts_at)} – {parisHM(selected.ends_at)} · {svc(selected.service)}</Text>
           <Body style={{ marginTop: 2 }}>{selected.customer_name}</Body>
           <Body muted style={{ fontSize: 13 }}>{selected.customer_phone}{selected.customer_email ? ` · ${selected.customer_email}` : ''}</Body>
+          {(() => { const l = loyaltyLabel(loyaltyFor(selected, history)); return l ? <Text style={{ fontFamily: fonts.sansSemi, fontSize: 13, color: colors.champagneDark, marginTop: 4 }}>{l}</Text> : null; })()}
           {selected.notes ? <Body muted style={{ fontSize: 13, marginTop: 4 }}>« {selected.notes} »</Body> : null}
           <Body muted style={{ fontSize: 12, marginTop: 4 }}>Réf. {selected.reference}</Body>
           <View style={{ flexDirection: 'row', gap: space.sm, marginTop: space.sm }}>

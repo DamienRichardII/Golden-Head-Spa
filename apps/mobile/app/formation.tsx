@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { BUSINESS } from '@ghs/config';
 import { space } from '@ghs/ui';
 import { Body, Button, Card, Field, Notice, Screen, ScreenHeader, SectionTitle } from '../src/components/ui';
@@ -11,6 +12,7 @@ import { mailTo } from '../src/lib/open';
  * avec un message pré-rempli adressé à l'institut. Rien n'est envoyé par l'application elle-même.
  */
 export default function Formation() {
+  const router = useRouter();
   const [name, setName] = useState('');
   const [from, setFrom] = useState('');
   const [msg, setMsg] = useState('');
@@ -24,6 +26,10 @@ export default function Formation() {
       <Card>
         <Body>Le programme, les dates et les tarifs de nos formations seront communiqués très prochainement.</Body>
         <Body muted style={{ marginTop: space.sm }}>Laissez-nous votre demande : l'équipe vous répondra personnellement par mail.</Body>
+      </Card>
+      <Card style={{ marginTop: space.md }}>
+        <Body>Vous êtes déjà inscrite à la Golden Académie ?</Body>
+        <Button label="Accéder à mes modules" onPress={() => router.push('/academie')} style={{ marginTop: space.sm }} />
       </Card>
       <SectionTitle>Être informé(e)</SectionTitle>
       <Field label="Nom et prénom" autoComplete="name" value={name} onChangeText={setName} />

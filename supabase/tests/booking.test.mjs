@@ -7,8 +7,9 @@ const R = fileURLToPath(new URL('../', import.meta.url));
 const db = new PGlite({ extensions: { btree_gist, pgcrypto } });
 await db.exec(`create role anon; create role authenticated; create schema auth;
  create table auth.users (id uuid primary key default gen_random_uuid(), raw_user_meta_data jsonb);
- create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.sub', true), '')::uuid $$;`);
-for (const f of ['migrations/20261015000000_init_core.sql', 'seed.sql', 'migrations/20261016000000_booking.sql', 'migrations/20261016000200_opening_hours.sql', 'migrations/20261105000000_flash_offers.sql', 'migrations/20261112000000_journal.sql', 'migrations/20261112000100_agenda.sql']) await db.exec(fs.readFileSync(R + f, 'utf8'));
+ create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.sub', true), '')::uuid $$;
+ create function auth.jwt() returns jsonb language sql stable as $$ select jsonb_build_object('email', nullif(current_setting('request.jwt.email', true), '')) $$;`);
+for (const f of ['migrations/20261015000000_init_core.sql', 'seed.sql', 'migrations/20261016000000_booking.sql', 'migrations/20261016000200_opening_hours.sql', 'migrations/20261105000000_flash_offers.sql', 'migrations/20261112000000_journal.sql', 'migrations/20261112000100_agenda.sql', 'migrations/20261116000000_academie_push.sql']) await db.exec(fs.readFileSync(R + f, 'utf8'));
 // Comme sur Supabase : les droits de table sont accordés, c'est la RLS qui fait le tri.
 await db.exec('grant usage on schema public, auth to anon, authenticated; grant all on all tables in schema public to anon, authenticated; grant select on auth.users to authenticated;');
 let fail = 0;
@@ -52,8 +53,8 @@ ok(!!err, `entrées invalides refusées (${err?.slice(0, 60)})`);
 const admin = crypto.randomUUID(), client = crypto.randomUUID();
 await db.exec(`insert into auth.users (id) values ('${admin}'), ('${client}')`);
 await db.exec(`insert into user_roles (user_id, role) values ('${admin}', 'admin') on conflict do nothing`);
-const as = async (role, sub, sql) => {
-  await db.exec(`reset role; set role ${role}; select set_config('request.jwt.sub', '${sub ?? ''}', false)`);
+const as = async (role, sub, sql, email = '') => {
+  await db.exec(`reset role; set role ${role}; select set_config('request.jwt.sub', '${sub ?? ''}', false); select set_config('request.jwt.email', '${email}', false)`);
   const r = await db.query(sql).catch((e) => ({ error: e.message, rows: [] }));
   await db.exec('reset role');
   return r;
@@ -112,4 +113,26 @@ const sb = await slots('decouverte', wed);
 ok(!sb.includes(ws[10]) && !sb.includes(ws[11]), 'créneaux bloqués retirés de la réservation en ligne');
 ok((await as('anon', null, 'select * from blocked_slots')).rows.length === 0, 'anon ne voit pas les blocages');
 ok((await as('authenticated', client, "insert into blocked_slots (starts_at, ends_at) values (now(), now() + interval '1 hour') returning 1")).error !== undefined, 'un membre ne peut pas bloquer');
+// --- Académie : contenu réservé aux élèves inscrites ---
+await db.exec("insert into academie_modules (position, title, body, published) values (1, 'Le Head Spa', 'Contenu réservé', true), (2, 'Brouillon', 'Pas prêt', false)");
+await db.exec("insert into academie_access (email, note) values ('eleve@x.fr', 'test')");
+const eleve = crypto.randomUUID(), autre = crypto.randomUUID();
+ok((await as('anon', null, 'select * from academie_modules')).rows.length === 0, 'anon ne voit aucun module');
+ok((await as('authenticated', autre, 'select * from academie_modules', 'autre@x.fr')).rows.length === 0, 'connectée sans inscription : aucun module');
+ok((await as('authenticated', eleve, 'select * from academie_modules', 'ELEVE@x.fr')).rows.length === 1, 'élève inscrite (casse ignorée) : modules publiés seulement');
+ok((await as('authenticated', admin, 'select * from academie_modules')).rows.length === 2, 'admin voit tout, brouillons compris');
+ok((await as('authenticated', eleve, "update academie_modules set body = 'piraté'", 'eleve@x.fr')).rows.length === 0, 'une élève ne peut pas modifier un module');
+ok((await as('authenticated', eleve, "insert into academie_access (email) values ('moi@x.fr') returning 1", 'eleve@x.fr')).error !== undefined, 'une élève ne peut pas s’inscrire elle-même');
+ok((await as('authenticated', eleve, 'select * from academie_access', 'eleve@x.fr')).rows.length === 1, 'une élève ne voit que sa propre ligne d’accès');
+ok((await as('authenticated', admin, "insert into academie_access (email) values ('Maj@X.fr') returning 1")).error !== undefined, 'e-mail non normalisé refusé');
+ok((await as('authenticated', admin, "insert into academie_access (email) values ('nouvelle@x.fr') returning 1")).rows.length === 1, 'admin ajoute une élève');
+ok((await as('anon', null, 'select has_academie_access()')).error !== undefined, 'anon ne peut pas appeler has_academie_access');
+// --- Notifications : appareils ---
+ok((await as('anon', null, "select register_push_device('ExponentPushToken[abcdefghijkl]', 'ios')")).error === undefined, 'inscription d’un appareil par la fonction');
+ok((await as('anon', null, "select register_push_device('n-importe-quoi', 'ios')")).error !== undefined, 'jeton invalide refusé');
+ok((await as('anon', null, 'select * from push_devices')).rows.length === 0, 'anon ne peut pas lire les appareils');
+ok((await as('anon', null, "insert into push_devices (token, platform) values ('ExponentPushToken[zzzzzzzzzzzz]','ios') returning 1")).error !== undefined, 'insertion directe refusée');
+ok((await as('authenticated', client, 'select * from push_devices')).rows.length === 0, 'un client connecté ne lit pas les appareils');
+ok((await as('authenticated', admin, 'select * from push_devices')).rows.length === 1, 'admin lit les appareils');
+ok((await as('anon', null, "select unregister_push_device('ExponentPushToken[abcdefghijkl]')")).error === undefined && (await as('authenticated', admin, 'select * from push_devices')).rows.length === 0, 'désinscription');
 console.log(fail ? `\n${fail} ECHEC(S)` : '\nTOUT OK'); process.exit(fail ? 1 : 0);
