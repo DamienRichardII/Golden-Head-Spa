@@ -20,6 +20,7 @@ const LIVE: Row[] = [
   { label: 'Mes réservations', icon: 'calendar-outline', href: '/(tabs)/booking' },
   { label: 'Cartes cadeaux', icon: 'gift-outline', href: '/gift-card' },
   { label: 'Programme Fidélité', icon: 'ribbon-outline', href: '/loyalty' },
+  { label: 'Avis des clientes', icon: 'star-outline', href: '/reviews' },
   { label: 'Contact', icon: 'location-outline', href: '/contact' },
 ];
 const LOCKED: Row[] = [

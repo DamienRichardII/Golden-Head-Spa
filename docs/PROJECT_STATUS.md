@@ -108,3 +108,9 @@ Base de données : migration `20261116000000_academie_push.sql`, **NON appliqué
 
 Prérequis Supabase pour l'Académie : activer la connexion par e-mail et adapter le modèle d'e-mail « Magic Link » pour y inclure le code à 6 chiffres (`{{ .Token }}`) ; prévoir un SMTP personnalisé (le service intégré est limité à quelques e-mails par heure).
 
+## Avis des clientes (19/11/2026)
+
+Demande d'Inès : afficher les avis dans l'application. Choix : **aucun avis Google ou Planity n'est recopié** (textes et noms de tiers, conditions des plateformes). L'écran `/reviews` affiche la note Planity (5,0 sur 443 avis, lue sur la fiche le 19/11/2026) avec liens vers les fiches Planity et Google, et les avis déposés dans l'application : après la fin du rendez-vous, la cliente note et commente (preuve = identifiant et jeton de la réservation) ; le prénom affiché est tiré de la réservation ; l'avis n'est publié qu'après validation dans l'onglet admin « Avis », où Inès peut aussi ajouter un avis recueilli avec l'accord de la cliente.
+
+Base de données : migration `20261119000000_reviews.sql`, non appliquée sur Supabase. Tests SQL : 71 vérifications. Limites : seul le dernier rendez-vous réservé sur l'appareil permet de déposer un avis ; la note Google n'est pas lue (fiche non accessible depuis l'outil), l'affichage de la note Google nécessiterait l'API Google Places (clé à créer par la cliente).
+

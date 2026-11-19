@@ -12,6 +12,7 @@ const ITEMS = [
   { label: 'Offrir une carte cadeau', href: '/gift-card' },
   { label: 'Journal bien-être', href: '/(tabs)/journal' },
   { label: 'Programme Fidélité', href: '/loyalty' },
+  { label: 'Avis des clientes', href: '/reviews' },
   { label: 'Formation', href: '/formation' },
   { label: 'Golden Académie (élèves)', href: '/academie' },
   { label: 'Boutique', href: '/(tabs)/shop' },

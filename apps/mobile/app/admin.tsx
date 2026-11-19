@@ -11,10 +11,11 @@ import { adminClient } from '../src/lib/adminClient';
 import { AgendaAdmin } from '../src/admin/AgendaAdmin';
 import { JournalAdmin } from '../src/admin/JournalAdmin';
 import { AcademieAdmin } from '../src/admin/AcademieAdmin';
+import { ReviewsAdmin } from '../src/admin/ReviewsAdmin';
 import { fetchLoyaltyHistory } from '../src/admin/loyaltyData';
 import { loyaltyFor, loyaltyLabel, type HistoryRow } from '../src/lib/loyalty';
 
-type Tab = 'agenda' | 'bookings' | 'journal' | 'academie' | 'hours' | 'closures' | 'offers';
+type Tab = 'agenda' | 'bookings' | 'journal' | 'academie' | 'reviews' | 'hours' | 'closures' | 'offers';
 interface BookingRow {
   id: string; reference: string; starts_at: string; ends_at: string; customer_name: string; customer_email: string | null;
   customer_phone: string; notes: string | null; status: 'confirmed' | 'cancelled'; service: { name: string } | { name: string }[] | null;
@@ -93,7 +94,7 @@ export default function Admin() {
         <Pressable onPress={signOut} accessibilityRole="button"><Text style={{ fontFamily: fonts.sansMedium, color: colors.champagneDark }}>Déconnexion</Text></Pressable>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: space.md, flexGrow: 0 }} contentContainerStyle={{ gap: space.sm }}>
-        {([['agenda', 'Agenda'], ['bookings', 'Liste'], ['journal', 'Journal'], ['academie', 'Académie'], ['hours', 'Horaires'], ['closures', 'Fermetures'], ['offers', 'Offres flash']] as const).map(([key, label]) => (
+        {([['agenda', 'Agenda'], ['bookings', 'Liste'], ['journal', 'Journal'], ['academie', 'Académie'], ['reviews', 'Avis'], ['hours', 'Horaires'], ['closures', 'Fermetures'], ['offers', 'Offres flash']] as const).map(([key, label]) => (
           <Pressable key={key} accessibilityRole="tab" accessibilityState={{ selected: tab === key }} onPress={() => setTab(key)}
             style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: radii.pill, backgroundColor: tab === key ? colors.champagne : colors.beige }}>
             <Text style={{ fontFamily: fonts.sansMedium, fontSize: 13, color: tab === key ? colors.onGold : colors.brown }}>{label}</Text>
@@ -103,6 +104,7 @@ export default function Admin() {
       {tab === 'agenda' && <AgendaAdmin />}
       {tab === 'journal' && <JournalAdmin />}
       {tab === 'academie' && <AcademieAdmin />}
+      {tab === 'reviews' && <ReviewsAdmin />}
       {tab === 'bookings' && <Bookings />}
       {tab === 'hours' && <Hours />}
       {tab === 'closures' && <Closures />}

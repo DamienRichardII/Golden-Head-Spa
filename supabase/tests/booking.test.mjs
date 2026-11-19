@@ -9,7 +9,7 @@ await db.exec(`create role anon; create role authenticated; create schema auth;
  create table auth.users (id uuid primary key default gen_random_uuid(), raw_user_meta_data jsonb);
  create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.sub', true), '')::uuid $$;
  create function auth.jwt() returns jsonb language sql stable as $$ select jsonb_build_object('email', nullif(current_setting('request.jwt.email', true), '')) $$;`);
-for (const f of ['migrations/20261015000000_init_core.sql', 'seed.sql', 'migrations/20261016000000_booking.sql', 'migrations/20261016000200_opening_hours.sql', 'migrations/20261105000000_flash_offers.sql', 'migrations/20261112000000_journal.sql', 'migrations/20261112000100_agenda.sql', 'migrations/20261116000000_academie_push.sql']) await db.exec(fs.readFileSync(R + f, 'utf8'));
+for (const f of ['migrations/20261015000000_init_core.sql', 'seed.sql', 'migrations/20261016000000_booking.sql', 'migrations/20261016000200_opening_hours.sql', 'migrations/20261105000000_flash_offers.sql', 'migrations/20261112000000_journal.sql', 'migrations/20261112000100_agenda.sql', 'migrations/20261116000000_academie_push.sql', 'migrations/20261119000000_reviews.sql']) await db.exec(fs.readFileSync(R + f, 'utf8'));
 // Comme sur Supabase : les droits de table sont accordés, c'est la RLS qui fait le tri.
 await db.exec('grant usage on schema public, auth to anon, authenticated; grant all on all tables in schema public to anon, authenticated; grant select on auth.users to authenticated;');
 let fail = 0;
@@ -135,4 +135,23 @@ ok((await as('anon', null, "insert into push_devices (token, platform) values ('
 ok((await as('authenticated', client, 'select * from push_devices')).rows.length === 0, 'un client connecté ne lit pas les appareils');
 ok((await as('authenticated', admin, 'select * from push_devices')).rows.length === 1, 'admin lit les appareils');
 ok((await as('anon', null, "select unregister_push_device('ExponentPushToken[abcdefghijkl]')")).error === undefined && (await as('authenticated', admin, 'select * from push_devices')).rows.length === 0, 'désinscription');
+// --- Avis : après le rendez-vous, modérés ---
+const svcId = (await db.query("select id from services limit 1")).rows[0].id;
+const mk = async (starts, ends, name, status = 'confirmed') => (await db.query("insert into bookings (service_id, starts_at, ends_at, customer_name, customer_email, customer_phone, status) values ($1, $2::timestamptz, $3::timestamptz, $4, 'avis@x.fr', '0612345678', $5) returning id, cancel_token", [svcId, starts, ends, name, status])).rows[0];
+const pastB = await mk('2025-01-10T10:00:00Z', '2025-01-10T11:00:00Z', 'lea DUPONT martin');
+const futureB = await mk('2031-01-10T10:00:00Z', '2031-01-10T11:00:00Z', 'Futur Client');
+const rv = (id, tok, r, c) => as('anon', null, `select submit_review('${id}', '${tok}', ${r}, '${c}') as r`);
+ok((await rv(futureB.id, futureB.cancel_token, 5, 'Trop tot')).error?.includes('not_eligible'), 'avis refusé avant la fin du rendez-vous');
+ok((await rv(pastB.id, crypto.randomUUID(), 5, 'Faux jeton')).error?.includes('not_eligible'), 'avis refusé avec un mauvais jeton');
+ok((await rv(pastB.id, pastB.cancel_token, 9, 'Note hors plage')).error !== undefined, 'note hors 1–5 refusée');
+ok((await rv(pastB.id, pastB.cancel_token, 5, 'Un moment parfait.')).rows[0]?.r === true, 'avis déposé après le rendez-vous');
+ok((await rv(pastB.id, pastB.cancel_token, 4, 'Deuxième avis')).error?.includes('already_reviewed'), 'un seul avis par rendez-vous');
+ok((await db.query("select author_name from reviews")).rows[0].author_name === 'Lea M.', 'prénom et initiale tirés de la réservation');
+ok((await as('anon', null, 'select * from reviews')).rows.length === 0, 'avis en attente invisible du public');
+ok((await as('anon', null, "insert into reviews (author_name, rating, comment) values ('Faux', 5, 'Faux avis') returning 1")).error !== undefined, 'insertion directe refusée');
+ok((await as('authenticated', client, "update reviews set status = 'approved'")).rows.length === 0, 'un client ne peut pas valider un avis');
+ok((await as('authenticated', admin, "update reviews set status = 'approved' returning 1")).rows.length === 1, 'admin valide un avis');
+ok((await as('anon', null, 'select * from reviews')).rows.length === 1, 'avis validé visible du public');
+ok((await db.query("select approved_at from reviews")).rows[0].approved_at !== null, 'date de validation posée par la base');
+ok((await as('authenticated', admin, "insert into reviews (author_name, rating, comment, source, status) values ('Sophie', 5, 'Recueilli avec accord', 'manuel', 'approved') returning 1")).rows.length === 1, 'admin ajoute un avis manuel');
 console.log(fail ? `\n${fail} ECHEC(S)` : '\nTOUT OK'); process.exit(fail ? 1 : 0);
