@@ -6,6 +6,7 @@ import { BUSINESS, REVIEW_LINKS } from '@ghs/config';
 import { colors, fonts, space } from '@ghs/ui';
 import { Body, Button, Card, Field, Notice, Screen, ScreenHeader, SectionTitle } from '../src/components/ui';
 import { getLastBooking, type BookingConfirmation } from '../src/lib/booking';
+import { GOOGLE_REVIEWS } from '../src/lib/googleReviews';
 import { fetchReviews, submitReview, summarize, validComment, type Review, type ReviewErrorCode } from '../src/lib/reviews';
 
 const Stars = ({ value, size = 16 }: { value: number; size?: number }) => (
@@ -21,7 +22,7 @@ const MESSAGES: Record<ReviewErrorCode, string> = {
   network: 'Envoi impossible pour le moment. Réessayez un peu plus tard.',
 };
 
-/** Avis : note Planity (lien vers la fiche, aucun texte recopié) + avis déposés dans l'application, publiés après validation. */
+/** Avis : notes Planity et Google, avis Google sélectionnés (source indiquée) + avis déposés dans l'application, publiés après validation. */
 export default function Reviews() {
   const [reviews, setReviews] = useState<Review[] | undefined>();
   const [failed, setFailed] = useState(false);
@@ -40,11 +41,21 @@ export default function Reviews() {
         <Text style={{ fontFamily: fonts.serif, fontSize: 40, color: colors.brown }}>{BUSINESS.rating.score.toFixed(1).replace('.', ',')}</Text>
         <Stars value={5} size={20} />
         <Body muted style={{ marginTop: space.sm }}>{BUSINESS.rating.count} avis sur {BUSINESS.rating.source}</Body>
+        <Body muted style={{ marginTop: 2 }}>{String(BUSINESS.googleRating.score).replace('.', ',')} / 5 · {BUSINESS.googleRating.count} avis sur {BUSINESS.googleRating.source}</Body>
         <View style={{ flexDirection: 'row', gap: space.sm, marginTop: space.md }}>
           <Button label="Sur Planity" variant="ghost" onPress={() => void WebBrowser.openBrowserAsync(REVIEW_LINKS.planity)} style={{ flex: 1, minHeight: 44 }} />
           <Button label="Sur Google" variant="ghost" onPress={() => void WebBrowser.openBrowserAsync(REVIEW_LINKS.google)} style={{ flex: 1, minHeight: 44 }} />
         </View>
       </Card>
+
+      <SectionTitle>Avis Google</SectionTitle>
+      {GOOGLE_REVIEWS.map((g) => (
+        <Card key={g.author} style={{ marginBottom: space.sm }}>
+          <Stars value={g.rating} />
+          <Body style={{ marginTop: space.sm }}>{g.text}</Body>
+          <Body muted style={{ fontSize: 13, marginTop: 6 }}>{g.author} · Avis Google</Body>
+        </Card>
+      ))}
 
       <SectionTitle>Dans l'application</SectionTitle>
       {failed && <Notice>Les avis ne sont pas disponibles pour le moment.</Notice>}

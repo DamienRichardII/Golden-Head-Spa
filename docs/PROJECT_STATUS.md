@@ -114,3 +114,4 @@ Demande d'Inès : afficher les avis dans l'application. Choix : **aucun avis Goo
 
 Base de données : migration `20261119000000_reviews.sql`, non appliquée sur Supabase. Tests SQL : 71 vérifications. Limites : seul le dernier rendez-vous réservé sur l'appareil permet de déposer un avis ; la note Google n'est pas lue (fiche non accessible depuis l'outil), l'affichage de la note Google nécessiterait l'API Google Places (clé à créer par la cliente).
 
+Mise à jour 19/11/2026 : sur demande du propriétaire, 7 avis Google qu'il a sélectionnés (captures transmises) sont affichés dans `/reviews` (`src/lib/googleReviews.ts`), avec la mention « Avis Google », noms abrégés (prénom + initiale), plus la note Google 4,7 sur 207 avis (`BUSINESS.googleRating`). Ces avis sont figés dans le code : pour en ajouter, il faut modifier ce fichier. Aucune modification de base de données.

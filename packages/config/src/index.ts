@@ -16,6 +16,7 @@ export const BUSINESS = {
   giftCardRules: 'Valable 1 an, du mardi au samedi aux horaires d\'ouverture (10h30–18h30). Non valable les jours fériés et sur les créneaux nocturnes, ni cumulable avec l\'option dernière minute.',
   giftCardValidityMonths: 12,
   rating: { score: 5.0, count: 443, source: 'Planity' }, // vu sur Planity le 19/11/2026
+  googleRating: { score: 4.7, count: 207, source: 'Google' }, // résumé des avis Google transmis par le propriétaire le 19/11/2026
 } as const;
 
 /** Pages publiques où lire les avis (liens fournis par le propriétaire le 19/11/2026). Aucun avis n'est recopié : l'application renvoie vers ces fiches. */
