@@ -14,6 +14,8 @@ import { RitualTile } from '../../src/components/RitualCard';
 import { IMAGES } from '../../src/data/images';
 import { RITUALS } from '../../src/data/rituals';
 import { fetchJournal } from '../../src/lib/journal';
+import { ExternalReviewCard } from '../../src/components/ReviewParts';
+import { homeReviews } from '../../src/lib/externalReviews';
 
 const QUICK = [
   { label: 'Nos soins', icon: 'sparkles-outline', href: '/rituals' },
@@ -21,9 +23,6 @@ const QUICK = [
   { label: 'Écrire', icon: 'mail-outline', href: '/contact' },
   { label: 'Boutique', icon: 'bag-outline', href: '/(tabs)/shop' },
 ] as const;
-
-// Extraits fournis par le client (visuel carte cadeau). Anonymes : à remplacer par des avis vérifiés.
-const REVIEW_QUOTES = ['Une expérience inoubliable.', 'Un lieu magique.', 'Un vrai moment de sérénité.', 'Un cadeau parfait.'];
 
 export default function Home() {
   const router = useRouter();
@@ -108,12 +107,8 @@ export default function Home() {
 
       <Reveal index={5}>
         <SectionTitle>Ce que disent nos clientes</SectionTitle>
-        {REVIEW_QUOTES.map((q) => (
-          <Card key={q} style={{ marginBottom: space.sm }}>
-            <Text style={{ color: colors.champagne, letterSpacing: 2 }} accessibilityLabel="5 étoiles">★★★★★</Text>
-            <Text style={s.quote}>« {q} »</Text>
-          </Card>
-        ))}
+        {homeReviews(4).map((r) => <ExternalReviewCard key={`${r.source}-${r.author ?? r.date}-${r.text.slice(0, 12)}`} r={r} lines={4} />)}
+        <Button label="Voir tous les avis" variant="ghost" onPress={() => router.push('/reviews')} style={{ marginTop: space.xs }} />
       </Reveal>
     </Screen>
   );

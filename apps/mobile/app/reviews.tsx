@@ -6,22 +6,9 @@ import { BUSINESS, REVIEW_LINKS } from '@ghs/config';
 import { colors, fonts, space } from '@ghs/ui';
 import { Body, Button, Card, Field, Notice, Screen, ScreenHeader, SectionTitle } from '../src/components/ui';
 import { getLastBooking, type BookingConfirmation } from '../src/lib/booking';
-import { EXTERNAL_REVIEWS, SOURCE_LABEL, starName, type ReviewSource } from '../src/lib/externalReviews';
+import { ExternalReviewCard, SourceBadge, Stars } from '../src/components/ReviewParts';
+import { EXTERNAL_REVIEWS, type ReviewSource } from '../src/lib/externalReviews';
 import { fetchReviews, submitReview, summarize, validComment, type Review, type ReviewErrorCode } from '../src/lib/reviews';
-
-const Stars = ({ value, size = 16 }: { value: number; size?: number }) => (
-  <View style={{ flexDirection: 'row', gap: 2 }} accessibilityLabel={`${String(value).replace('.', ',')} étoiles sur 5`}>
-    {[1, 2, 3, 4, 5].map((n) => <Ionicons key={n} name={starName(n, value)} size={size} color={colors.champagne} />)}
-  </View>
-);
-
-/** Pastille indiquant d'où vient l'avis (Google, Planity ou application). */
-const SourceBadge = ({ source }: { source: ReviewSource | 'app' }) => (
-  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderColor: colors.champagne, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 }}>
-    {source === 'google' && <Ionicons name="logo-google" size={12} color={colors.champagne} />}
-    <Text style={{ fontFamily: fonts.sansMedium, fontSize: 12, color: colors.champagne }}>{source === 'app' ? "Avis de l'application" : SOURCE_LABEL[source]}</Text>
-  </View>
-);
 
 const ScoreRow = ({ source, score, count }: { source: ReviewSource; score: number; count: number }) => (
   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: space.sm }}>
@@ -68,19 +55,7 @@ export default function Reviews() {
       </Card>
 
       <SectionTitle>Avis sélectionnés</SectionTitle>
-      {EXTERNAL_REVIEWS.map((r) => (
-        <Card key={`${r.source}-${r.author ?? r.date}-${r.text.slice(0, 12)}`} style={{ marginBottom: space.sm }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Stars value={r.rating} />
-              <Text style={{ fontFamily: fonts.sansMedium, fontSize: 13, color: colors.champagne }}>{r.rating.toFixed(1).replace('.', ',')}</Text>
-            </View>
-            <SourceBadge source={r.source} />
-          </View>
-          <Body style={{ marginTop: space.sm }}>{r.text}</Body>
-          {(r.author || r.date) && <Body muted style={{ fontSize: 13, marginTop: 6 }}>{[r.author, r.date].filter(Boolean).join(' · ')}</Body>}
-        </Card>
-      ))}
+      {EXTERNAL_REVIEWS.map((r) => <ExternalReviewCard key={`${r.source}-${r.author ?? r.date}-${r.text.slice(0, 12)}`} r={r} />)}
 
       <SectionTitle>Dans l'application</SectionTitle>
       {failed && <Notice>Les avis ne sont pas disponibles pour le moment.</Notice>}

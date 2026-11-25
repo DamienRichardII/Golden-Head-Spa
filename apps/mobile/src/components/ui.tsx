@@ -29,8 +29,8 @@ export function Screen({ children, bottomInset = 0 }: { children: ReactNode; dar
 export function Title({ children, style }: { children: ReactNode; style?: object }) {
   return <Text accessibilityRole="header" style={[s.title, style]}>{children}</Text>;
 }
-export function Body({ children, muted, style }: { children: ReactNode; muted?: boolean; style?: object }) {
-  return <Text style={[s.body, muted && { color: colors.muted }, style]}>{children}</Text>;
+export function Body({ children, muted, style, numberOfLines }: { children: ReactNode; muted?: boolean; style?: object; numberOfLines?: number }) {
+  return <Text numberOfLines={numberOfLines} style={[s.body, muted && { color: colors.muted }, style]}>{children}</Text>;
 }
 
 /** En-tête d'écran : retour (optionnel) + titre serif + sous-titre. */

@@ -20,3 +20,16 @@ export function starName(n: number, value: number): 'star' | 'star-half' | 'star
   if (n <= v) return 'star';
   return n - 0.5 <= v ? 'star-half' : 'star-outline';
 }
+
+/** Sélection pour l'accueil : avis Google et Planity en alternance (les plus récents/premiers de chaque source). */
+export function homeReviews(count = 4, all: readonly ExternalReview[] = EXTERNAL_REVIEWS): ExternalReview[] {
+  const g = all.filter((r) => r.source === 'google');
+  const p = all.filter((r) => r.source === 'planity');
+  const out: ExternalReview[] = [];
+  for (let i = 0; out.length < count && (i < g.length || i < p.length); i++) {
+    const a = g[i]; const b = p[i];
+    if (a && out.length < count) out.push(a);
+    if (b && out.length < count) out.push(b);
+  }
+  return out;
+}

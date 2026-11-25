@@ -23,3 +23,13 @@ describe('avis Google / Planity', () => {
     expect(starName(1, 0.2)).toBe('star-outline');
   });
 });
+
+describe('homeReviews', () => {
+  it('alterne Google et Planity, sans doublon', async () => {
+    const { homeReviews, EXTERNAL_REVIEWS } = await import('./externalReviews');
+    const h = homeReviews(4);
+    expect(h.map((r) => r.source)).toEqual(['google', 'planity', 'google', 'planity']);
+    expect(new Set(h).size).toBe(4);
+    expect(h.every((r) => EXTERNAL_REVIEWS.includes(r))).toBe(true);
+  });
+});
