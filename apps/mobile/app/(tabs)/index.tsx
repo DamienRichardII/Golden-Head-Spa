@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BUSINESS } from '@ghs/config';
 import { colors, fonts, radii, shadow, space } from '@ghs/ui';
 import { Body, Button, Card, Reveal, Screen, SectionTitle } from '../../src/components/ui';
+import { WaterJets } from '../../src/components/WaterJets';
 import { MusicToggle } from '../../src/components/MusicToggle';
 import { DEMO_MODE } from '../../src/store/session';
 import { RitualTile } from '../../src/components/RitualCard';
@@ -52,6 +53,7 @@ export default function Home() {
       <Reveal index={1}>
         <View style={s.hero}>
           <Image source={IMAGES.hero} contentFit="cover" contentPosition="center" style={StyleSheet.absoluteFill} />
+          <WaterJets />
           <LinearGradient colors={['rgba(14,10,7,0.1)', 'rgba(14,10,7,0.92)']} style={StyleSheet.absoluteFill} />
           <View style={{ padding: space.md }}>
             <Text style={s.heroText}>Bienvenue chez{'\n'}Golden Head Spa</Text>

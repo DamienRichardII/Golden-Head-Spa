@@ -1,8 +1,8 @@
-import { bookingSchema, type BookingInput } from '@ghs/validation';
+import { bookingSchema, hasHealthData, type BookingInput } from '@ghs/validation';
 import { supabase } from './supabase';
 import { getJson, setJson } from './storage';
 
-export type BookingErrorCode = 'slot_unavailable' | 'too_many_bookings' | 'service_not_found' | 'invalid' | 'network';
+export type BookingErrorCode = 'slot_unavailable' | 'too_many_bookings' | 'service_not_found' | 'consent_required' | 'invalid' | 'network';
 
 export class BookingError extends Error {
   constructor(public code: BookingErrorCode) { super(code); }
@@ -45,13 +45,17 @@ export async function createBooking(input: BookingInput): Promise<BookingConfirm
   const parsed = bookingSchema.safeParse(input);
   if (!parsed.success) throw new BookingError('invalid');
   const v = parsed.data;
+  if (hasHealthData(v) && !v.healthConsent) throw new BookingError('consent_required');
   const { data, error } = await supabase.rpc('create_booking', {
-    p_service_slug: v.serviceSlug, p_starts_at: v.startsAt, p_name: v.name, p_email: v.email, p_phone: v.phone, p_notes: v.notes ?? null,
+    p_service_slug: v.serviceSlug, p_starts_at: v.startsAt, p_name: v.name, p_email: v.email, p_phone: v.phone, p_notes: v.notes || null,
+    p_first_name: v.firstName, p_address: v.address || null, p_allergies: v.allergies || null, p_pain: v.pain || null,
+    p_pregnant: v.pregnant ?? null, p_gift_card: v.giftCard || null, p_health_consent: Boolean(v.healthConsent),
   });
   if (error) {
     const msg = error.message ?? '';
     if (msg.includes('slot_unavailable')) throw new BookingError('slot_unavailable');
     if (msg.includes('too_many_bookings')) throw new BookingError('too_many_bookings');
+    if (msg.includes('consent_required')) throw new BookingError('consent_required');
     if (msg.includes('service_not_found')) throw new BookingError('service_not_found');
     throw new BookingError(error.code === '23514' ? 'invalid' : 'network');
   }

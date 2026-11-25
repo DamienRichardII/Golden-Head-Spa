@@ -36,10 +36,21 @@ export const bookingSchema = z.object({
   serviceSlug: z.string().min(1),
   startsAt: z.string().datetime({ offset: true }),
   name: z.string().trim().min(2, 'Nom requis').max(80),
+  firstName: z.string().trim().min(2, 'Prénom requis').max(80),
   email: emailSchema,
   phone: z.string().trim().regex(/^[0-9+()\s.-]{6,20}$/, 'Téléphone invalide'),
+  address: z.string().trim().max(200).optional(),
+  /** Données de santé : exigent healthConsent (voir hasHealthData). */
+  allergies: z.string().trim().max(300).optional(),
+  pain: z.string().trim().max(300).optional(),
+  pregnant: z.boolean().optional(),
+  giftCard: z.string().trim().max(40).optional(),
+  healthConsent: z.boolean().optional(),
   notes: z.string().trim().max(500).optional(),
 });
+/** Vrai si la réservation contient au moins une donnée de santé (allergies, douleurs, grossesse). */
+export const hasHealthData = (v: { allergies?: string; pain?: string; pregnant?: boolean }) =>
+  Boolean(v.allergies?.trim() || v.pain?.trim() || v.pregnant !== undefined);
 export type BookingInput = z.infer<typeof bookingSchema>;
 
 export const flashOfferSchema = z.object({

@@ -115,3 +115,16 @@ Demande d'Inès : afficher les avis dans l'application. Choix : **aucun avis Goo
 Base de données : migration `20261119000000_reviews.sql`, non appliquée sur Supabase. Tests SQL : 71 vérifications. Limites : seul le dernier rendez-vous réservé sur l'appareil permet de déposer un avis ; la note Google n'est pas lue (fiche non accessible depuis l'outil), l'affichage de la note Google nécessiterait l'API Google Places (clé à créer par la cliente).
 
 Mise à jour 19/11/2026 : sur demande du propriétaire, 7 avis Google qu'il a sélectionnés (captures transmises) sont affichés dans `/reviews` (`src/lib/googleReviews.ts`), avec la mention « Avis Google », noms abrégés (prénom + initiale), plus la note Google 4,7 sur 207 avis (`BUSINESS.googleRating`). Ces avis sont figés dans le code : pour en ajouter, il faut modifier ce fichier. Aucune modification de base de données.
+
+Mise à jour 25/11/2026 : vidéo d'ouverture « arche d'eau » (8 s, 1080 x 1920, tirée de la vraie vidéo d'Inès, étalonnée champagne, logo officiel) activée sur l'écran d'accueil (`USE_VIDEO = true`, `VIDEO_RATIO = 9/16`, `app/index.tsx`). Le nom écrit par-dessus la vidéo n'est plus affiché (le logo est dans la vidéo) ; la photo fixe et le nom restent disponibles en repassant `USE_VIDEO` à `false`. Image fixe de repli : dernière image de la vidéo. Limite : la source (WhatsApp, 464 x 832) donne une image douce ; un fichier original de meilleure qualité améliorerait nettement le rendu. Sources du montage : dossier `golden-head-spa-animation` (hors dépôt).
+
+Mise à jour 25/11/2026 (avis) : chaque avis affiché porte une pastille de source (« Avis Google », « Avis Planity », « Avis de l'application ») et ses étoiles (demi-étoiles prises en charge) ; le haut de la page montre les deux notes avec étoiles (Google 4,7 sur 207, Planity 5,0 sur 443). Les 7 avis Google sélectionnés sont affichés ; la liste Planity (`src/lib/planityReviews.ts`) est vide en attendant les avis à publier. Tests : 28.
+
+Mise à jour 25/11/2026 (avis Planity) : 10 avis Planity sélectionnés par le propriétaire (captures transmises) sont affichés avec la pastille « Avis Planity », leur note (dont 4,8), leur texte tel quel et leur date. Planity n'indique pas le nom des clientes : aucun nom n'est affiché. Avis figés dans `src/lib/planityReviews.ts` (un avis dont la date était coupée sur la capture est affiché sans date). Tests : 29.
+
+## Mise à jour 25/11/2026 — fiche cliente et eau animée
+- Réservation : champs Nom, Prénom, adresse, allergies, douleurs, grossesse, numéro de carte cadeau (saisi tel quel, non vérifié contre les cartes émises). Migration `20261125000000_client_file.sql` (à exécuter sur Supabase).
+- Données de santé (allergies, douleurs, grossesse) : consentement explicite obligatoire, horodaté (`health_consent_at`), lisibles uniquement par la cliente et l'admin (RLS). Politique de confidentialité à compléter par le client.
+- Agenda admin : affichage de la fiche (adresse, carte cadeau, bloc santé confidentiel). Les rendez-vous créés par l'admin (téléphone) n'ont pas encore ces champs.
+- Accueil : couche `WaterJets` (gouttes de lumière sur les jets de l'arche), désactivée si « réduire les animations ». Photo inchangée.
+- Non fait : paiement à l'avance (en attente des clés Stripe et des règles d'acompte/remboursement).

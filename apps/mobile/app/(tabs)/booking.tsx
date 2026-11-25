@@ -24,6 +24,7 @@ const ERRORS: Record<string, string> = {
   slot_unavailable: "Ce créneau vient d'être pris. Choisissez un autre horaire.",
   too_many_bookings: 'Vous avez déjà plusieurs rendez-vous à venir. Contactez-nous pour en ajouter.',
   service_not_found: "Ce soin n'est plus disponible à la réservation.",
+  consent_required: 'Cochez le consentement pour que nous puissions enregistrer vos informations de santé.',
   invalid: 'Certaines informations sont invalides. Vérifiez le formulaire.',
   network: 'Service indisponible pour le moment. Réessayez dans un instant.',
 };
@@ -101,7 +102,7 @@ function Steps({ step }: { step: 1 | 2 | 3 }) {
   );
 }
 
-const detailsSchema = bookingSchema.pick({ name: true, email: true, phone: true, notes: true });
+const detailsSchema = bookingSchema.pick({ name: true, firstName: true, email: true, phone: true, address: true, allergies: true, pain: true, giftCard: true, notes: true });
 type Details = z.infer<typeof detailsSchema>;
 
 /** Réservation intégrée : disponibilités et rendez-vous gérés par notre backend (Supabase), sans passer par Planity. */
@@ -116,12 +117,14 @@ export default function Booking() {
   const [slot, setSlot] = useState<string | undefined>();
   const [error, setError] = useState<string | undefined>();
   const [submitting, setSubmitting] = useState(false);
+  const [pregnant, setPregnant] = useState<boolean | undefined>();
+  const [consent, setConsent] = useState(false);
   const [done, setDone] = useState<BookingConfirmation | undefined>();
   const [cancelMsg, setCancelMsg] = useState<string | undefined>();
   const ritual = serviceId ? getRitual(serviceId) : undefined;
 
   const { control, handleSubmit, formState: { errors } } = useForm<Details>({
-    resolver: zodResolver(detailsSchema), defaultValues: { name: '', email: '', phone: '', notes: '' },
+    resolver: zodResolver(detailsSchema), defaultValues: { name: '', firstName: '', email: '', phone: '', address: '', allergies: '', pain: '', giftCard: '', notes: '' },
   });
 
   useEffect(() => { fetchClosedDays(days).then(setClosedDays).catch(() => {}); }, [days]);
@@ -139,9 +142,11 @@ export default function Booking() {
 
   const onSubmit = handleSubmit(async (details) => {
     if (!ritual || !slot) return;
+    const healthGiven = Boolean(details.allergies?.trim() || details.pain?.trim() || pregnant !== undefined);
+    if (healthGiven && !consent) { setError(ERRORS.consent_required); return; }
     setSubmitting(true); setError(undefined);
     try {
-      setDone(await createBooking({ ...details, serviceSlug: ritual.id, startsAt: slot }));
+      setDone(await createBooking({ ...details, pregnant, healthConsent: consent, serviceSlug: ritual.id, startsAt: slot }));
     } catch (e) {
       const code = e instanceof BookingError ? e.code : 'network';
       setError(ERRORS[code]);
@@ -244,11 +249,40 @@ export default function Booking() {
         <>
           <Text style={sec}>Vos coordonnées</Text>
           <Controller control={control} name="name" render={({ field }) => (
-            <Field label="Nom et prénom" autoComplete="name" value={field.value} onChangeText={field.onChange} error={errors.name?.message} />)} />
+            <Field label="Nom" autoComplete="family-name" value={field.value} onChangeText={field.onChange} error={errors.name?.message} />)} />
+          <Controller control={control} name="firstName" render={({ field }) => (
+            <Field label="Prénom" autoComplete="given-name" value={field.value} onChangeText={field.onChange} error={errors.firstName?.message} />)} />
           <Controller control={control} name="email" render={({ field }) => (
             <Field label="Email" keyboardType="email-address" autoCapitalize="none" autoComplete="email" value={field.value} onChangeText={field.onChange} error={errors.email?.message} />)} />
           <Controller control={control} name="phone" render={({ field }) => (
             <Field label="Téléphone" keyboardType="phone-pad" autoComplete="tel" value={field.value} onChangeText={field.onChange} error={errors.phone?.message} />)} />
+          <Controller control={control} name="address" render={({ field }) => (
+            <Field label="Adresse (optionnel)" autoComplete="street-address" value={field.value ?? ''} onChangeText={field.onChange} error={errors.address?.message} />)} />
+          <Controller control={control} name="giftCard" render={({ field }) => (
+            <Field label="Numéro de carte cadeau (optionnel)" autoCapitalize="characters" value={field.value ?? ''} onChangeText={field.onChange} error={errors.giftCard?.message} />)} />
+
+          <Text style={sec}>Votre santé (optionnel)</Text>
+          <Body muted style={{ fontSize: 13, marginBottom: space.sm }}>Ces informations nous aident à adapter le soin en toute sécurité.</Body>
+          <Controller control={control} name="allergies" render={({ field }) => (
+            <Field label="Allergies" multiline value={field.value ?? ''} onChangeText={field.onChange} error={errors.allergies?.message} />)} />
+          <Controller control={control} name="pain" render={({ field }) => (
+            <Field label="Douleurs (nuque, dos, tête…)" multiline value={field.value ?? ''} onChangeText={field.onChange} error={errors.pain?.message} />)} />
+          <Text style={{ fontFamily: fonts.sansMedium, fontSize: 14, color: colors.brown, marginBottom: 6 }}>Êtes-vous enceinte ?</Text>
+          <View style={{ flexDirection: 'row', gap: space.sm, marginBottom: space.md }}>
+            {([['Oui', true], ['Non', false]] as const).map(([label, val]) => {
+              const active = pregnant === val;
+              return (
+                <Pressable key={label} accessibilityRole="radio" accessibilityState={{ selected: active }} onPress={() => setPregnant(active ? undefined : val)}
+                  style={{ flex: 1, alignItems: 'center', paddingVertical: 11, borderRadius: radii.pill, borderWidth: 1, borderColor: active ? colors.champagne : colors.line, backgroundColor: active ? colors.champagne : 'rgba(34,25,17,0.6)' }}>
+                  <Text style={{ fontFamily: fonts.sansMedium, color: active ? colors.onGold : colors.brown }}>{label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: consent }} onPress={() => setConsent(!consent)} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: space.md }}>
+            <Ionicons name={consent ? 'checkbox' : 'square-outline'} size={22} color={colors.champagneDark} />
+            <Body muted style={{ flex: 1, fontSize: 12 }}>J'accepte que mes informations de santé (allergies, douleurs, grossesse) soient enregistrées et consultées uniquement par {BUSINESS.name} pour adapter mon soin. Requis si vous remplissez l'un de ces champs.</Body>
+          </Pressable>
           <Controller control={control} name="notes" render={({ field }) => (
             <Field label="Message (optionnel)" multiline value={field.value ?? ''} onChangeText={field.onChange} error={errors.notes?.message} />)} />
           <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>

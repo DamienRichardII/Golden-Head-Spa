@@ -15,16 +15,15 @@ const VIDEO = require('../assets/video/opening.mp4');
 const ARCH = require('../assets/images/hero.jpg');
 
 /**
- * Vidéo d'ouverture désactivée par défaut : la version actuelle (générée) montre une vasque et non l'arche d'eau, et le nom
- * n'apparaît qu'à la fin. On affiche à la place la vraie photo de l'arche avec le nom tout de suite. Passer à `true` pour
- * rejouer la vidéo (code conservé) quand la nouvelle vidéo « arche d'eau » sera prête.
+ * Vidéo d'ouverture « arche d'eau » (8 s, 1080 x 1920, le logo apparaît au centre à la fin). Passer à `false` pour revenir à la
+ * photo fixe de l'arche avec le nom en haut de l'écran (code conservé). Le nom n'est pas réécrit par-dessus la vidéo : le logo y est déjà.
  */
-const USE_VIDEO = false;
+const USE_VIDEO = true;
 
 /** Si la lecture n'a pas démarré après ce délai (autoplay bloqué, économie d'énergie iOS…), on affiche l'image finale fixe. */
 const START_TIMEOUT_MS = 3500;
 /** Format de la vidéo (largeur / hauteur) et part de largeur qui doit toujours rester visible (le logo en occupe ~64 %). */
-const VIDEO_RATIO = 2 / 3;
+const VIDEO_RATIO = 9 / 16;
 const SAFE_WIDTH = 0.8;
 
 /**
@@ -43,7 +42,7 @@ function videoBox(w: number, h: number) {
 }
 
 /**
- * Entrée immersive : vidéo d'ouverture (eau qui coule, vapeur, logo) jouée une seule fois, muette, en ligne (playsInline,
+ * Entrée immersive : vidéo d'ouverture (arche d'eau, logo) jouée une seule fois, muette, en ligne (playsInline,
  * indispensable sur iPhone), puis maintien sur la dernière image. Le bouton « Commencer » est disponible tout de suite.
  * Mouvement réduit, erreur, lecture bloquée ou vidéo indisponible : image finale fixe, navigation inchangée.
  * La musique de détente ne démarre qu'au toucher (les navigateurs bloquent l'autoplay).
@@ -94,13 +93,17 @@ export default function Onboarding() {
       )}
       {box.safe && <LinearGradient pointerEvents="none" colors={[colors.black, 'rgba(14,10,7,0)']} style={[s.topFade, { top: box.top, width }]} />}
       <LinearGradient pointerEvents="none" colors={['rgba(14,10,7,0.78)', 'rgba(14,10,7,0)', 'rgba(14,10,7,0.2)', 'rgba(14,10,7,0.92)']} locations={[0, 0.3, 0.55, 1]} style={s.fill} />
-      <View pointerEvents="none" style={[s.brandWrap, { top: insets.top + space.xl }]}>
-        <Animated.View entering={FadeIn.duration(500).reduceMotion(rm)} accessibilityRole="header" accessibilityLabel="Golden Head Spa">
-          <Text style={s.brand}>GOLDEN</Text>
-          <Text style={s.brandSub}>HEAD SPA</Text>
-          <Text style={s.values}>Compiègne</Text>
-        </Animated.View>
-      </View>
+      {USE_VIDEO ? (
+        <View accessible accessibilityRole="header" accessibilityLabel="Golden Head Spa, Compiègne" style={s.srOnly} />
+      ) : (
+        <View pointerEvents="none" style={[s.brandWrap, { top: insets.top + space.xl }]}>
+          <Animated.View entering={FadeIn.duration(500).reduceMotion(rm)} accessibilityRole="header" accessibilityLabel="Golden Head Spa">
+            <Text style={s.brand}>GOLDEN</Text>
+            <Text style={s.brandSub}>HEAD SPA</Text>
+            <Text style={s.values}>Compiègne</Text>
+          </Animated.View>
+        </View>
+      )}
       <View pointerEvents="box-none" style={[s.wrap, { paddingBottom: insets.bottom + space.lg }]}>
         <Animated.View entering={FadeIn.delay(300).duration(900).reduceMotion(rm)}>
           <Button label="Prendre un RDV" onPress={() => { void startAmbient(); router.replace('/(tabs)/booking'); }} style={{ marginBottom: space.sm }} />
@@ -117,6 +120,7 @@ export default function Onboarding() {
 
 const s = StyleSheet.create({
   fill: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  srOnly: { position: 'absolute', width: 1, height: 1, opacity: 0 },
   topFade: { position: 'absolute', left: 0, height: 110 },
   wrap: { flex: 1, justifyContent: 'flex-end', paddingHorizontal: space.lg },
   brandWrap: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },

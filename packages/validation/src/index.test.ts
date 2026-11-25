@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { adminBookingSchema, blockedSlotSchema, bookingSchema, chatRequestSchema, journalPostSchema, flashOfferSchema, giftCardPurchaseSchema, signUpSchema } from './index';
+import { adminBookingSchema, blockedSlotSchema, bookingSchema, hasHealthData, chatRequestSchema, journalPostSchema, flashOfferSchema, giftCardPurchaseSchema, signUpSchema } from './index';
 
 describe('validation', () => {
   it('rejette un mot de passe court', () => {
@@ -14,7 +14,7 @@ describe('validation', () => {
     const r = giftCardPurchaseSchema.safeParse({ amountEur: 5, recipientName: 'Lea', recipientEmail: 'lea@x.fr' });
     expect(r.success).toBe(false);
   });
-  const booking = { serviceSlug: 'decouverte', startsAt: '2026-10-20T08:30:00.000Z', name: 'Lea Dupont', email: 'Lea@X.fr', phone: '06 12 34 56 78' };
+  const booking = { serviceSlug: 'decouverte', startsAt: '2026-10-20T08:30:00.000Z', name: 'Lea Dupont', firstName: 'Lea', email: 'Lea@X.fr', phone: '06 12 34 56 78' };
   it('accepte une réservation valide et normalise l’email', () => {
     const r = bookingSchema.safeParse(booking);
     expect(r.success && r.data.email).toBe('lea@x.fr');
@@ -48,5 +48,19 @@ describe('validation', () => {
     expect(adminBookingSchema.safeParse({ ...ok, day: '01/12/2026' }).success).toBe(false);
     expect(blockedSlotSchema.safeParse({ day: '2026-12-01', start: '12:00', end: '13:30' }).success).toBe(true);
     expect(blockedSlotSchema.safeParse({ day: '2026-12-01', start: '13:30', end: '12:00' }).success).toBe(false);
+  });
+});
+
+describe('fiche cliente (réservation)', () => {
+  const base = { serviceSlug: 'decouverte', startsAt: '2026-10-20T08:30:00.000Z', name: 'Dupont', firstName: 'Lea', email: 'lea@x.fr', phone: '06 12 34 56 78' };
+  it('exige le prénom', () => {
+    expect(bookingSchema.safeParse(base).success).toBe(true);
+    expect(bookingSchema.safeParse({ ...base, firstName: '' }).success).toBe(false);
+  });
+  it('détecte les données de santé', () => {
+    expect(hasHealthData({})).toBe(false);
+    expect(hasHealthData({ allergies: '  ' })).toBe(false);
+    expect(hasHealthData({ allergies: 'noix' })).toBe(true);
+    expect(hasHealthData({ pregnant: false })).toBe(true);
   });
 });

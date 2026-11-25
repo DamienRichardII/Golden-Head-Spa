@@ -9,7 +9,7 @@ await db.exec(`create role anon; create role authenticated; create schema auth;
  create table auth.users (id uuid primary key default gen_random_uuid(), raw_user_meta_data jsonb);
  create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.sub', true), '')::uuid $$;
  create function auth.jwt() returns jsonb language sql stable as $$ select jsonb_build_object('email', nullif(current_setting('request.jwt.email', true), '')) $$;`);
-for (const f of ['migrations/20261015000000_init_core.sql', 'seed.sql', 'migrations/20261016000000_booking.sql', 'migrations/20261016000200_opening_hours.sql', 'migrations/20261105000000_flash_offers.sql', 'migrations/20261112000000_journal.sql', 'migrations/20261112000100_agenda.sql', 'migrations/20261116000000_academie_push.sql', 'migrations/20261119000000_reviews.sql']) await db.exec(fs.readFileSync(R + f, 'utf8'));
+for (const f of ['migrations/20261015000000_init_core.sql', 'seed.sql', 'migrations/20261016000000_booking.sql', 'migrations/20261016000200_opening_hours.sql', 'migrations/20261105000000_flash_offers.sql', 'migrations/20261112000000_journal.sql', 'migrations/20261112000100_agenda.sql', 'migrations/20261116000000_academie_push.sql', 'migrations/20261119000000_reviews.sql', 'migrations/20261125000000_client_file.sql']) await db.exec(fs.readFileSync(R + f, 'utf8'));
 // Comme sur Supabase : les droits de table sont accordés, c'est la RLS qui fait le tri.
 await db.exec('grant usage on schema public, auth to anon, authenticated; grant all on all tables in schema public to anon, authenticated; grant select on auth.users to authenticated;');
 let fail = 0;
@@ -154,4 +154,20 @@ ok((await as('authenticated', admin, "update reviews set status = 'approved' ret
 ok((await as('anon', null, 'select * from reviews')).rows.length === 1, 'avis validé visible du public');
 ok((await db.query("select approved_at from reviews")).rows[0].approved_at !== null, 'date de validation posée par la base');
 ok((await as('authenticated', admin, "insert into reviews (author_name, rating, comment, source, status) values ('Sophie', 5, 'Recueilli avec accord', 'manuel', 'approved') returning 1")).rows.length === 1, 'admin ajoute un avis manuel');
+// --- Fiche cliente : prénom, adresse, santé (consentement), carte cadeau ---
+const thu = day(4, 30);
+const ts = await slots('decouverte', thu);
+const full = (iso, email, extra) => db.query('select * from create_booking($1,$2::timestamptz,$3,$4,$5,null,$6,$7,$8,$9,$10,$11,$12)', [ 'decouverte', iso, 'Dupont', email, '0612345678', ...extra ]);
+let e2; try { await full(ts[0], 'sante@x.fr', ['Lea', '5 rue X, Compiègne', 'noix', null, null, null, false]); } catch (e) { e2 = e.message; }
+ok(e2?.includes('consent_required'), 'données de santé refusées sans consentement');
+ok((await db.query("select count(*)::int c from bookings where customer_email = 'sante@x.fr'")).rows[0].c === 0, 'rien enregistré sans consentement');
+const fb = (await full(ts[0], 'sante@x.fr', ['Lea', '5 rue X, Compiègne', 'noix', 'dos', true, 'GC-1234', true])).rows[0];
+const fr = (await db.query('select * from bookings where id = $1', [fb.booking_id])).rows[0];
+ok(fr.customer_first_name === 'Lea' && fr.customer_address === '5 rue X, Compiègne' && fr.health_allergies === 'noix' && fr.health_pain === 'dos' && fr.health_pregnant === true && fr.gift_card_number === 'GC-1234', 'fiche cliente enregistrée');
+ok(fr.health_consent_at !== null, 'date du consentement santé posée par la base');
+const fb2 = (await full(ts[2], 'nosante@x.fr', ['Zoe', null, null, null, null, null, false])).rows[0];
+ok((await db.query('select health_consent_at from bookings where id = $1', [fb2.booking_id])).rows[0].health_consent_at === null, 'sans donnée de santé : pas de consentement requis');
+ok((await as('anon', null, 'select health_allergies from bookings')).rows.length === 0, 'anon ne lit aucune donnée de santé');
+ok((await as('authenticated', client, 'select health_allergies from bookings')).rows.length === 0, 'un autre membre ne lit pas les données de santé');
+ok((await as('authenticated', admin, 'select health_allergies from bookings where health_allergies is not null')).rows.length === 1, 'l’admin lit la fiche santé');
 console.log(fail ? `\n${fail} ECHEC(S)` : '\nTOUT OK'); process.exit(fail ? 1 : 0);

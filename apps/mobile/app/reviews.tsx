@@ -6,12 +6,33 @@ import { BUSINESS, REVIEW_LINKS } from '@ghs/config';
 import { colors, fonts, space } from '@ghs/ui';
 import { Body, Button, Card, Field, Notice, Screen, ScreenHeader, SectionTitle } from '../src/components/ui';
 import { getLastBooking, type BookingConfirmation } from '../src/lib/booking';
-import { GOOGLE_REVIEWS } from '../src/lib/googleReviews';
+import { EXTERNAL_REVIEWS, SOURCE_LABEL, starName, type ReviewSource } from '../src/lib/externalReviews';
 import { fetchReviews, submitReview, summarize, validComment, type Review, type ReviewErrorCode } from '../src/lib/reviews';
 
 const Stars = ({ value, size = 16 }: { value: number; size?: number }) => (
-  <View style={{ flexDirection: 'row', gap: 2 }} accessibilityLabel={`${value} étoiles sur 5`}>
-    {[1, 2, 3, 4, 5].map((n) => <Ionicons key={n} name={n <= value ? 'star' : 'star-outline'} size={size} color={colors.champagne} />)}
+  <View style={{ flexDirection: 'row', gap: 2 }} accessibilityLabel={`${String(value).replace('.', ',')} étoiles sur 5`}>
+    {[1, 2, 3, 4, 5].map((n) => <Ionicons key={n} name={starName(n, value)} size={size} color={colors.champagne} />)}
+  </View>
+);
+
+/** Pastille indiquant d'où vient l'avis (Google, Planity ou application). */
+const SourceBadge = ({ source }: { source: ReviewSource | 'app' }) => (
+  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderColor: colors.champagne, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 }}>
+    {source === 'google' && <Ionicons name="logo-google" size={12} color={colors.champagne} />}
+    <Text style={{ fontFamily: fonts.sansMedium, fontSize: 12, color: colors.champagne }}>{source === 'app' ? "Avis de l'application" : SOURCE_LABEL[source]}</Text>
+  </View>
+);
+
+const ScoreRow = ({ source, score, count }: { source: ReviewSource; score: number; count: number }) => (
+  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: space.sm }}>
+    <View>
+      <SourceBadge source={source} />
+      <Body muted style={{ marginTop: 6 }}>{count} avis</Body>
+    </View>
+    <View style={{ alignItems: 'flex-end' }}>
+      <Text style={{ fontFamily: fonts.serif, fontSize: 34, color: colors.brown }}>{score.toFixed(1).replace('.', ',')}</Text>
+      <Stars value={score} size={16} />
+    </View>
   </View>
 );
 
@@ -38,22 +59,26 @@ export default function Reviews() {
     <Screen>
       <ScreenHeader title="Avis des clientes" subtitle="Ce que disent celles qui ont vécu l'expérience" />
       <Card>
-        <Text style={{ fontFamily: fonts.serif, fontSize: 40, color: colors.brown }}>{BUSINESS.rating.score.toFixed(1).replace('.', ',')}</Text>
-        <Stars value={5} size={20} />
-        <Body muted style={{ marginTop: space.sm }}>{BUSINESS.rating.count} avis sur {BUSINESS.rating.source}</Body>
-        <Body muted style={{ marginTop: 2 }}>{String(BUSINESS.googleRating.score).replace('.', ',')} / 5 · {BUSINESS.googleRating.count} avis sur {BUSINESS.googleRating.source}</Body>
+        <ScoreRow source="google" score={BUSINESS.googleRating.score} count={BUSINESS.googleRating.count} />
+        <ScoreRow source="planity" score={BUSINESS.rating.score} count={BUSINESS.rating.count} />
         <View style={{ flexDirection: 'row', gap: space.sm, marginTop: space.md }}>
           <Button label="Sur Planity" variant="ghost" onPress={() => void WebBrowser.openBrowserAsync(REVIEW_LINKS.planity)} style={{ flex: 1, minHeight: 44 }} />
           <Button label="Sur Google" variant="ghost" onPress={() => void WebBrowser.openBrowserAsync(REVIEW_LINKS.google)} style={{ flex: 1, minHeight: 44 }} />
         </View>
       </Card>
 
-      <SectionTitle>Avis Google</SectionTitle>
-      {GOOGLE_REVIEWS.map((g) => (
-        <Card key={g.author} style={{ marginBottom: space.sm }}>
-          <Stars value={g.rating} />
-          <Body style={{ marginTop: space.sm }}>{g.text}</Body>
-          <Body muted style={{ fontSize: 13, marginTop: 6 }}>{g.author} · Avis Google</Body>
+      <SectionTitle>Avis sélectionnés</SectionTitle>
+      {EXTERNAL_REVIEWS.map((r) => (
+        <Card key={`${r.source}-${r.author ?? r.date}-${r.text.slice(0, 12)}`} style={{ marginBottom: space.sm }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Stars value={r.rating} />
+              <Text style={{ fontFamily: fonts.sansMedium, fontSize: 13, color: colors.champagne }}>{r.rating.toFixed(1).replace('.', ',')}</Text>
+            </View>
+            <SourceBadge source={r.source} />
+          </View>
+          <Body style={{ marginTop: space.sm }}>{r.text}</Body>
+          {(r.author || r.date) && <Body muted style={{ fontSize: 13, marginTop: 6 }}>{[r.author, r.date].filter(Boolean).join(' · ')}</Body>}
         </Card>
       ))}
 
@@ -63,7 +88,10 @@ export default function Reviews() {
       {own.count > 0 && <Body muted style={{ marginBottom: space.sm }}>Moyenne : {String(own.average).replace('.', ',')} / 5 · {own.count} avis</Body>}
       {reviews?.map((r) => (
         <Card key={r.id} style={{ marginBottom: space.sm }}>
-          <Stars value={r.rating} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Stars value={r.rating} />
+            <SourceBadge source="app" />
+          </View>
           <Body style={{ marginTop: space.sm }}>{r.comment}</Body>
           <Body muted style={{ fontSize: 13, marginTop: 6 }}>{r.author_name}</Body>
         </Card>

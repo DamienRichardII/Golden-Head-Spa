@@ -16,7 +16,9 @@ import {
 
 interface Appt {
   id: string; reference: string; starts_at: string; ends_at: string; customer_name: string; customer_email: string | null;
-  customer_phone: string; notes: string | null; service: { name: string } | { name: string }[] | null;
+  customer_phone: string; notes: string | null;
+  customer_first_name?: string | null; customer_address?: string | null; health_allergies?: string | null; health_pain?: string | null;
+  health_pregnant?: boolean | null; gift_card_number?: string | null; service: { name: string } | { name: string }[] | null;
 }
 interface Block { id: string; starts_at: string; ends_at: string; reason: string | null }
 interface Hours { weekday: number; open_time: string | null; close_time: string | null }
@@ -58,7 +60,7 @@ export function AgendaAdmin() {
     const start = parisToIso(first, '00:00');
     const end = parisToIso(addDays(last, 1), '00:00');
     const [a, b, h, c] = await Promise.all([
-      adminClient.from('bookings').select('id,reference,starts_at,ends_at,customer_name,customer_email,customer_phone,notes,service:services(name)')
+      adminClient.from('bookings').select('id,reference,starts_at,ends_at,customer_name,customer_email,customer_phone,notes,customer_first_name,customer_address,health_allergies,health_pain,health_pregnant,gift_card_number,service:services(name)')
         .eq('status', 'confirmed').gte('starts_at', start).lt('starts_at', end).order('starts_at'),
       adminClient.from('blocked_slots').select('id,starts_at,ends_at,reason').lt('starts_at', end).gt('ends_at', start).order('starts_at'),
       adminClient.from('business_hours').select('weekday,open_time,close_time'),
@@ -131,9 +133,19 @@ export function AgendaAdmin() {
       {selected && (
         <Card style={{ marginTop: space.md }}>
           <Text style={{ fontFamily: fonts.sansSemi, fontSize: 16, color: colors.brown }}>{parisHM(selected.starts_at)} – {parisHM(selected.ends_at)} · {svc(selected.service)}</Text>
-          <Body style={{ marginTop: 2 }}>{selected.customer_name}</Body>
+          <Body style={{ marginTop: 2 }}>{[selected.customer_first_name, selected.customer_name].filter(Boolean).join(' ')}</Body>
           <Body muted style={{ fontSize: 13 }}>{selected.customer_phone}{selected.customer_email ? ` · ${selected.customer_email}` : ''}</Body>
           {(() => { const l = loyaltyLabel(loyaltyFor(selected, history)); return l ? <Text style={{ fontFamily: fonts.sansSemi, fontSize: 13, color: colors.champagneDark, marginTop: 4 }}>{l}</Text> : null; })()}
+          {selected.customer_address ? <Body muted style={{ fontSize: 13, marginTop: 4 }}>{selected.customer_address}</Body> : null}
+          {selected.gift_card_number ? <Body style={{ fontSize: 13, marginTop: 4 }}>Carte cadeau : <Text style={{ fontFamily: fonts.sansSemi }}>{selected.gift_card_number}</Text></Body> : null}
+          {(selected.health_allergies || selected.health_pain || selected.health_pregnant != null) ? (
+            <View style={{ marginTop: space.sm, padding: space.sm, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line }}>
+              <Text style={{ fontFamily: fonts.sansSemi, fontSize: 12, color: colors.champagneDark }}>SANTÉ (confidentiel)</Text>
+              {selected.health_allergies ? <Body style={{ fontSize: 13, marginTop: 2 }}>Allergies : {selected.health_allergies}</Body> : null}
+              {selected.health_pain ? <Body style={{ fontSize: 13, marginTop: 2 }}>Douleurs : {selected.health_pain}</Body> : null}
+              {selected.health_pregnant != null ? <Body style={{ fontSize: 13, marginTop: 2 }}>Enceinte : {selected.health_pregnant ? 'oui' : 'non'}</Body> : null}
+            </View>
+          ) : null}
           {selected.notes ? <Body muted style={{ fontSize: 13, marginTop: 4 }}>« {selected.notes} »</Body> : null}
           <Body muted style={{ fontSize: 12, marginTop: 4 }}>Réf. {selected.reference}</Body>
           <View style={{ flexDirection: 'row', gap: space.sm, marginTop: space.sm }}>
